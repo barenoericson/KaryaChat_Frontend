@@ -19,7 +19,7 @@ const EditIcon = ({ color = '#C9A0DC', size = 16 }: any) => (
   </Svg>
 );
 
-const CameraIcon = ({ size = 20 }: any) => (
+const CameraIcon = ({ size = 18 }: any) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
     <Circle cx={12} cy={13} r={4} stroke="#fff" strokeWidth={2} />
@@ -45,11 +45,19 @@ const CheckIcon = ({ size = 16 }: any) => (
   </Svg>
 );
 
-const STATS = [
-  { label: 'Courses', val: '5' },
-  { label: 'Lessons', val: '0' },
-  { label: 'Quizzes', val: '0' },
-];
+const UserIcon = ({ size = 16 }: any) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#7B5EA7" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Circle cx={12} cy={7} r={4} stroke="#7B5EA7" strokeWidth={2} />
+  </Svg>
+);
+
+const EmailIcon = ({ size = 16 }: any) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="#3D2E5A" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M22 6l-10 7L2 6" stroke="#3D2E5A" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
 
 export default function ProfileScreen() {
   const { user, token, logout, updateUser } = useAuth();
@@ -63,8 +71,8 @@ export default function ProfileScreen() {
 
   const fadeIn = useRef(new Animated.Value(0)).current;
   const slideUp = useRef(new Animated.Value(30)).current;
-  const avatarScale = useRef(new Animated.Value(1)).current;
   const glowPulse = useRef(new Animated.Value(1)).current;
+  const avatarScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -80,30 +88,41 @@ export default function ProfileScreen() {
     ).start();
   }, []);
 
+  // Sync state when user changes
+  useEffect(() => {
+    setUsername(user?.username || '');
+    setBio(user?.bio || '');
+    setAvatar(user?.avatar || '');
+  }, [user]);
+
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please allow access to your photo library.');
-      return;
-    }
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Please allow access to your photo library.');
+        return;
+      }
 
-    Animated.sequence([
-      Animated.timing(avatarScale, { toValue: 0.9, duration: 100, useNativeDriver: true }),
-      Animated.spring(avatarScale, { toValue: 1, friction: 4, useNativeDriver: true }),
-    ]).start();
+      Animated.sequence([
+        Animated.timing(avatarScale, { toValue: 0.9, duration: 100, useNativeDriver: true }),
+        Animated.spring(avatarScale, { toValue: 1, friction: 4, useNativeDriver: true }),
+      ]).start();
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-      base64: true,
-    });
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.5,
+        base64: true,
+      });
 
-    if (!result.canceled && result.assets[0]) {
-      const base64 = `data:image/jpeg;base64,${result.assets[0].base64}`;
-      setAvatar(base64);
-      setEditing(true);
+      if (!result.canceled && result.assets[0]?.base64) {
+        const base64 = `data:image/jpeg;base64,${result.assets[0].base64}`;
+        setAvatar(base64);
+        setEditing(true);
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Failed to pick image');
     }
   };
 
@@ -137,9 +156,7 @@ export default function ProfileScreen() {
     setEditing(false);
   };
 
-  const getInitials = () => {
-    return (user?.username || 'U').charAt(0).toUpperCase();
-  };
+  const getInitials = () => (user?.username || 'U').charAt(0).toUpperCase();
 
   return (
     <View style={styles.container}>
@@ -171,7 +188,7 @@ export default function ProfileScreen() {
           )}
         </Animated.View>
 
-        {/* Avatar section */}
+        {/* Avatar */}
         <Animated.View style={[styles.avatarSection, { opacity: fadeIn }]}>
           <Animated.View style={[styles.avatarWrap, { transform: [{ scale: avatarScale }] }]}>
             <Animated.View style={[styles.avatarGlow, { transform: [{ scale: glowPulse }] }]} />
@@ -202,10 +219,14 @@ export default function ProfileScreen() {
           )}
         </Animated.View>
 
-        {/* Stats row — only when not editing */}
+        {/* Stats — only when not editing */}
         {!editing && (
           <Animated.View style={[styles.statsRow, { opacity: fadeIn, transform: [{ translateY: slideUp }] }]}>
-            {STATS.map((s, i) => (
+            {[
+              { label: 'Courses', val: '5' },
+              { label: 'Lessons', val: '0' },
+              { label: 'Quizzes', val: '0' },
+            ].map((s, i) => (
               <View key={i} style={styles.statCard}>
                 <Text style={styles.statVal}>{s.val}</Text>
                 <Text style={styles.statLabel}>{s.label}</Text>
@@ -222,14 +243,11 @@ export default function ProfileScreen() {
             {/* Username */}
             <Text style={styles.fieldLabel}>USERNAME</Text>
             <View style={[styles.inputWrap, focusedField === 'username' && styles.inputWrapFocused]}>
-              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-                <Path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#7B5EA7" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                <Circle cx={12} cy={7} r={4} stroke="#7B5EA7" strokeWidth={2} />
-              </Svg>
+              <UserIcon size={16} />
               <TextInput
                 style={styles.input}
                 value={username}
-                onChangeText={(t) => { setUsername(t); setEditing(true); }}
+                onChangeText={setUsername}
                 placeholder="Enter username"
                 placeholderTextColor="#3D2E5A"
                 autoCapitalize="none"
@@ -247,7 +265,7 @@ export default function ProfileScreen() {
               <TextInput
                 style={[styles.input, styles.bioInput]}
                 value={bio}
-                onChangeText={(t) => { setBio(t); setEditing(true); }}
+                onChangeText={setBio}
                 placeholder="Tell others about yourself..."
                 placeholderTextColor="#3D2E5A"
                 multiline
@@ -258,20 +276,17 @@ export default function ProfileScreen() {
             </View>
             <Text style={styles.charCount}>{bio.length}/150</Text>
 
-            {/* Email (read only) */}
+            {/* Email read only */}
             <Text style={styles.fieldLabel}>EMAIL</Text>
             <View style={[styles.inputWrap, styles.inputDisabled]}>
-              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-                <Path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="#3D2E5A" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                <Path d="M22 6l-10 7L2 6" stroke="#3D2E5A" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
+              <EmailIcon size={16} />
               <Text style={styles.inputReadOnly}>{user?.email}</Text>
               <View style={styles.lockedBadge}>
                 <Text style={styles.lockedText}>Locked</Text>
               </View>
             </View>
 
-            {/* Save button */}
+            {/* Save */}
             <TouchableOpacity
               style={[styles.saveBtn, loading && styles.saveBtnDisabled]}
               onPress={handleSave}
@@ -290,6 +305,14 @@ export default function ProfileScreen() {
           </Animated.View>
         )}
 
+        {/* Success toast */}
+        {saved && (
+          <Animated.View style={[styles.savedToast, { opacity: fadeIn }]}>
+            <CheckIcon size={14} />
+            <Text style={styles.savedToastText}>Profile updated successfully!</Text>
+          </Animated.View>
+        )}
+
         {/* Account info — only when not editing */}
         {!editing && (
           <Animated.View style={[styles.infoCard, { opacity: fadeIn }]}>
@@ -301,17 +324,9 @@ export default function ProfileScreen() {
             ].map((item, i) => (
               <View key={i} style={[styles.infoRow, i < 2 && styles.infoRowBorder]}>
                 <Text style={styles.infoLabel}>{item.label}</Text>
-                <Text style={styles.infoVal}>{item.val}</Text>
+                <Text style={styles.infoVal} numberOfLines={1}>{item.val}</Text>
               </View>
             ))}
-          </Animated.View>
-        )}
-
-        {/* Saved toast */}
-        {saved && (
-          <Animated.View style={styles.savedToast}>
-            <CheckIcon size={14} />
-            <Text style={styles.savedToastText}>Profile updated!</Text>
           </Animated.View>
         )}
 
@@ -358,19 +373,21 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(231,76,60,0.3)',
   },
   cancelBtnText: { color: '#E74C3C', fontSize: 13, fontWeight: '700' },
-
-  // Avatar
   avatarSection: { alignItems: 'center', marginBottom: 24 },
   avatarWrap: { position: 'relative', marginBottom: 16 },
   avatarGlow: {
     position: 'absolute', width: 120, height: 120, borderRadius: 60,
     backgroundColor: 'rgba(123,47,190,0.25)', top: -5, left: -5,
   },
-  avatarImg: { width: 110, height: 110, borderRadius: 55, borderWidth: 3, borderColor: '#7B2FBE' },
+  avatarImg: {
+    width: 110, height: 110, borderRadius: 55,
+    borderWidth: 3, borderColor: '#7B2FBE',
+  },
   avatarPlaceholder: {
     width: 110, height: 110, borderRadius: 55,
     backgroundColor: '#7B2FBE', justifyContent: 'center',
-    alignItems: 'center', borderWidth: 3, borderColor: 'rgba(147,112,219,0.5)',
+    alignItems: 'center', borderWidth: 3,
+    borderColor: 'rgba(147,112,219,0.5)',
   },
   avatarInitial: { fontSize: 42, fontWeight: '900', color: '#fff' },
   cameraBtn: {
@@ -381,22 +398,22 @@ const styles = StyleSheet.create({
   },
   displayName: { fontSize: 24, fontWeight: '900', color: '#fff', marginBottom: 4 },
   displayEmail: { fontSize: 13, color: '#7B5EA7', marginBottom: 10 },
-  displayBio: { fontSize: 14, color: '#C9A0DC', textAlign: 'center', lineHeight: 20, paddingHorizontal: 20 },
-  noBio: { fontSize: 13, color: '#3D2E5A', fontStyle: 'italic' },
-
-  // Stats
-  statsRow: {
-    flexDirection: 'row', gap: 10, marginBottom: 20,
+  displayBio: {
+    fontSize: 14, color: '#C9A0DC', textAlign: 'center',
+    lineHeight: 20, paddingHorizontal: 20,
   },
+  noBio: { fontSize: 13, color: '#3D2E5A', fontStyle: 'italic' },
+  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
   statCard: {
     flex: 1, backgroundColor: '#0E0E28', borderRadius: 16,
     padding: 14, alignItems: 'center', gap: 4,
     borderWidth: 1, borderColor: 'rgba(123,47,190,0.18)',
   },
   statVal: { fontSize: 20, fontWeight: '900', color: '#fff' },
-  statLabel: { fontSize: 10, color: '#7B5EA7', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-
-  // Form
+  statLabel: {
+    fontSize: 10, color: '#7B5EA7', fontWeight: '600',
+    textTransform: 'uppercase', letterSpacing: 0.5,
+  },
   form: {
     backgroundColor: '#0E0E28', borderRadius: 24,
     padding: 20, marginBottom: 16,
@@ -414,18 +431,21 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: 'rgba(123,47,190,0.15)', gap: 10,
   },
   inputWrapFocused: { borderColor: '#7B2FBE', backgroundColor: '#16163A' },
-  inputDisabled: { opacity: 0.5 },
+  inputDisabled: { opacity: 0.5, marginBottom: 16 },
   bioWrap: { alignItems: 'flex-start', paddingTop: 12, paddingBottom: 8 },
   input: { flex: 1, color: '#fff', fontSize: 15, paddingVertical: 14 },
   bioInput: { height: 80, textAlignVertical: 'top', paddingVertical: 0 },
-  inputReadOnly: { flex: 1, color: '#5A4A7A', fontSize: 15, paddingVertical: 14 },
+  inputReadOnly: { flex: 1, color: '#5A4A7A', fontSize: 14, paddingVertical: 14 },
   lockedBadge: {
     backgroundColor: 'rgba(123,47,190,0.15)', borderRadius: 6,
     paddingHorizontal: 8, paddingVertical: 3,
     borderWidth: 1, borderColor: 'rgba(123,47,190,0.2)',
   },
   lockedText: { color: '#5A4A7A', fontSize: 10, fontWeight: '700' },
-  charCount: { fontSize: 11, color: '#3D2E5A', textAlign: 'right', marginTop: -10, marginBottom: 16 },
+  charCount: {
+    fontSize: 11, color: '#3D2E5A', textAlign: 'right',
+    marginTop: -10, marginBottom: 16,
+  },
   saveBtn: {
     backgroundColor: '#7B2FBE', borderRadius: 14,
     paddingVertical: 16, alignItems: 'center', marginTop: 4,
@@ -435,20 +455,6 @@ const styles = StyleSheet.create({
   saveBtnDisabled: { opacity: 0.7 },
   saveBtnInner: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
-
-  // Account info card
-  infoCard: {
-    backgroundColor: '#0E0E28', borderRadius: 20,
-    padding: 18, marginBottom: 14,
-    borderWidth: 1, borderColor: 'rgba(123,47,190,0.18)',
-  },
-  infoCardTitle: { fontSize: 15, fontWeight: '900', color: '#fff', marginBottom: 14 },
-  infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12 },
-  infoRowBorder: { borderBottomWidth: 1, borderBottomColor: 'rgba(123,47,190,0.1)' },
-  infoLabel: { fontSize: 13, color: '#7B5EA7', fontWeight: '600' },
-  infoVal: { fontSize: 13, color: '#C9A0DC', fontWeight: '600', maxWidth: '60%', textAlign: 'right' },
-
-  // Toast
   savedToast: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: 'rgba(46,204,113,0.15)',
@@ -457,11 +463,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   savedToastText: { color: '#2ECC71', fontSize: 14, fontWeight: '700' },
-
-  // Logout
+  infoCard: {
+    backgroundColor: '#0E0E28', borderRadius: 20,
+    padding: 18, marginBottom: 14,
+    borderWidth: 1, borderColor: 'rgba(123,47,190,0.18)',
+  },
+  infoCardTitle: { fontSize: 15, fontWeight: '900', color: '#fff', marginBottom: 14 },
+  infoRow: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    paddingVertical: 12,
+  },
+  infoRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(123,47,190,0.1)',
+  },
+  infoLabel: { fontSize: 13, color: '#7B5EA7', fontWeight: '600' },
+  infoVal: {
+    fontSize: 13, color: '#C9A0DC', fontWeight: '600',
+    maxWidth: '60%', textAlign: 'right',
+  },
   logoutBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 10, borderRadius: 14, paddingVertical: 14,
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'center', gap: 10,
+    borderRadius: 14, paddingVertical: 14,
     borderWidth: 1.5, borderColor: 'rgba(231,76,60,0.3)',
     backgroundColor: 'rgba(231,76,60,0.08)',
   },
