@@ -6,6 +6,7 @@ interface User {
   email: string;
   username: string;
   avatar?: string;
+  bio?: string;
   isEmailVerified: boolean;
   isOnline: boolean;
 }
@@ -15,6 +16,7 @@ interface AuthContextType {
   token: string | null;
   login: (token: string, user: User) => Promise<void>;
   logout: () => Promise<void>;
+  updateUser: (user: User) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -25,9 +27,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadStoredAuth();
-  }, []);
+  useEffect(() => { loadStoredAuth(); }, []);
 
   const loadStoredAuth = async () => {
     try {
@@ -58,8 +58,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
   };
 
+  const updateUser = async (updatedUser: User) => {
+    await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, updateUser, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

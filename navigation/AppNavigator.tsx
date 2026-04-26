@@ -15,6 +15,7 @@ import KaryaChatScreen from '../screens/KaryaChatScreen';
 import CoursesScreen from '../screens/CoursesScreen';
 import CourseDetailScreen from '../screens/CourseDetailScreen';
 import QuizScreen from '../screens/QuizScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -96,11 +97,11 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
-        name="Profile"
-        component={DashboardScreen}
-        options={{
-          tabBarLabel: 'Profile',
-          tabBarIcon: ({ color }) => <UserIcon color={color} />,
+       name="Profile"
+       component={ProfileScreen}
+       options={{
+         tabBarLabel: 'Profile',
+         tabBarIcon: ({ color }) => <UserIcon color={color} />,
         }}
       />
     </Tab.Navigator>
