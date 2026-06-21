@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "",
-    "slug": "",
+    "name": "CodeMate",
+    "slug": "codemate",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/CodeMate_official_log-removebg-preview.png",
@@ -37,6 +37,12 @@
     "plugins": [
       "expo-secure-store",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "7af703a6-47b6-4055-8b76-42a86ca8c9e6"
+      }
+    },
+    "owner": "barenoericson"
   }
 }
