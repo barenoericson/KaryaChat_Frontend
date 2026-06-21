@@ -2,7 +2,7 @@ import Constants from 'expo-constants';
 
 function getApiUrl(): string {
   if (!__DEV__) {
-    return process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
+    return process.env.EXPO_PUBLIC_API_URL ?? 'https://karyachat-backend.onrender.com';
   }
 
   // In development, Expo knows what IP the dev server is running on.
