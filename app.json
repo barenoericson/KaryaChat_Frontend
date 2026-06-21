@@ -1,46 +1,42 @@
 {
   "expo": {
-    "name": "KaryaChat",
-    "slug": "frontend",
+    "name": "",
+    "slug": "",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/finalkaryachatlog.png",
+    "icon": "./assets/CodeMate_official_log-removebg-preview.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
-      "image": "./assets/finalkaryachatlog.png",
+      "image": "./assets/CodeMate_official_log-removebg-preview.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#080818"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.barenoericson.karyachat",
+      "bundleIdentifier": "com.barenoericson.codemate",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/finalkaryachatlog.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/CodeMate_official_log-removebg-preview.png",
+        "backgroundColor": "#080818"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.barenoericson.karyachat"
+      "package": "com.barenoericson.codemate"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "extra": {
-      "eas": {
-        "projectId": "855beaea-bc38-45a6-a00b-15d7b49e2f93"
-      }
-    },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
     "updates": {
-      "url": "https://u.expo.dev/855beaea-bc38-45a6-a00b-15d7b49e2f93"
-    }
+      "enabled": false
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-font"
+    ]
   }
 }

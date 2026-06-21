@@ -1,15 +1,36 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Animated, Dimensions,
-  StatusBar, Image,
+  Pressable, Animated, StatusBar, ActivityIndicator, Image,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import { UserRole } from '../types/auth.types';
+import { classesService } from '../services/classes.service';
+import { Colors, Typography, Spacing, Radius, Shadows, Gradients } from '../constants/theme';
+import { avatarUrl } from '../services/users.service';
 
-const { width } = Dimensions.get('window');
+// ─── Icons ────────────────────────────────────────────────────────────────────
 
-const BotIcon = ({ color = '#fff', size = 22 }: any) => (
+const BookIcon = ({ color = Colors.primary, size = 22 }: { color?: string; size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M4 19.5A2.5 2.5 0 016.5 17H20" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const UsersIcon = ({ color = Colors.primary, size = 22 }: { color?: string; size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Circle cx={9} cy={7} r={4} stroke={color} strokeWidth={2} />
+    <Path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const BotIcon = ({ color = Colors.primary, size = 22 }: { color?: string; size?: number }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Rect x={3} y={8} width={18} height={13} rx={3} stroke={color} strokeWidth={2} />
     <Path d="M9 12h.01M15 12h.01" stroke={color} strokeWidth={2.5} strokeLinecap="round" />
@@ -18,218 +39,243 @@ const BotIcon = ({ color = '#fff', size = 22 }: any) => (
   </Svg>
 );
 
-const StarIcon = ({ color = '#FFD700', size = 16 }: any) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-    <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-  </Svg>
-);
-
-const FlameIcon = ({ size = 18 }: any) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="#FF6B35">
-    <Path d="M12 2c0 0-5 5-5 10a5 5 0 0010 0c0-5-5-10-5-10z" />
-    <Path d="M12 8c0 0-2.5 2.5-2.5 5a2.5 2.5 0 005 0c0-2.5-2.5-5-2.5-5z" fill="#FFD700" />
-  </Svg>
-);
-
-const ArrowIcon = ({ color = '#C9A0DC', size = 16 }: any) => (
+const PlusIcon = ({ color = Colors.primary, size = 22 }: { color?: string; size?: number }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M5 12h14M12 5l7 7-7 7" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M12 5v14M5 12h14" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
 
-const TrophyIcon = ({ size = 20 }: any) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M8 21h8M12 17v4M7 4H4a2 2 0 00-2 2v1a4 4 0 004 4h.5M17 4h3a2 2 0 012 2v1a4 4 0 01-4 4h-.5" stroke="#FFD700" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <Path d="M7 4h10v8a5 5 0 01-10 0V4z" stroke="#FFD700" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+const ChevronRightIcon = ({ color = Colors.textMuted }: { color?: string }) => (
+  <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+    <Path d="M9 18l6-6-6-6" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
 
-const courses = [
-  { id: '1', title: 'HTML & CSS Fundamentals', lessons: 12, progress: 0, color: '#E44D26', colorLight: 'rgba(228,77,38,0.15)', icon: '🌐', level: 'Beginner' },
-  { id: '2', title: 'JavaScript Basics', lessons: 18, progress: 0, color: '#F7DF1E', colorLight: 'rgba(247,223,30,0.12)', icon: '⚡', level: 'Beginner' },
-  { id: '3', title: 'React Native', lessons: 24, progress: 0, color: '#61DAFB', colorLight: 'rgba(97,218,251,0.12)', icon: '⚛️', level: 'Intermediate' },
-  { id: '4', title: 'Node.js & NestJS', lessons: 20, progress: 0, color: '#68A063', colorLight: 'rgba(104,160,99,0.12)', icon: '🟢', level: 'Intermediate' },
-  { id: '5', title: 'PostgreSQL & Databases', lessons: 16, progress: 0, color: '#336791', colorLight: 'rgba(51,103,145,0.15)', icon: '🗄️', level: 'Intermediate' },
+// ─── Quick action cards ───────────────────────────────────────────────────────
+
+interface QuickAction {
+  label: string;
+  icon: 'book' | 'bot' | 'users' | 'plus';
+  color: string;
+  bg: string;
+}
+
+const TEACHER_ACTIONS: QuickAction[] = [
+  { label: 'New Class', icon: 'plus', color: Colors.primary, bg: Colors.primarySoft },
+  { label: 'AI Brainstorm', icon: 'bot', color: '#059669', bg: '#D1FAE5' },
+  { label: 'My Classes', icon: 'book', color: '#D97706', bg: '#FEF3C7' },
 ];
 
+const STUDENT_ACTIONS: QuickAction[] = [
+  { label: 'Join Class', icon: 'plus', color: Colors.primary, bg: Colors.primarySoft },
+  { label: 'AI Tutor', icon: 'bot', color: '#059669', bg: '#D1FAE5' },
+  { label: 'My Classes', icon: 'book', color: '#D97706', bg: '#FEF3C7' },
+];
+
+function ActionCard({ action, onPress }: { action: QuickAction; onPress: () => void }) {
+  const icons: Record<QuickAction['icon'], React.ReactNode> = {
+    book: <BookIcon color={action.color} size={22} />,
+    bot: <BotIcon color={action.color} size={22} />,
+    users: <UsersIcon color={action.color} size={22} />,
+    plus: <PlusIcon color={action.color} size={22} />,
+  };
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.actionCard, { backgroundColor: action.bg }, pressed && { opacity: 0.8 }]}
+      onPress={onPress}
+    >
+      <View style={[styles.actionIconWrap, { backgroundColor: action.color + '25' }]}>
+        {icons[action.icon]}
+      </View>
+      <Text style={[styles.actionLabel, { color: action.color }]}>{action.label}</Text>
+    </Pressable>
+  );
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+// ─── Main screen ──────────────────────────────────────────────────────────────
+
+const LANG_EMOJI: Record<string, string> = {
+  python: '🐍', javascript: '⚡', typescript: '🔷', java: '☕',
+  kotlin: '🟣', swift: '🍎', 'c++': '⚙️', 'c#': '💠', php: '🐘',
+  ruby: '💎', go: '🐹', rust: '🦀', dart: '🎯', flutter: '🎯',
+};
+
+function langEmoji(lang: string): string {
+  const key = Object.keys(LANG_EMOJI).find((k) => lang.toLowerCase().includes(k));
+  return key ? LANG_EMOJI[key] : '💻';
+}
+
 export default function DashboardScreen({ navigation }: any) {
-  const { user, logout } = useAuth();
-  const fadeIn = useRef(new Animated.Value(0)).current;
-  const slideUp = useRef(new Animated.Value(30)).current;
-  const mascotFloat = useRef(new Animated.Value(0)).current;
-  const glowPulse = useRef(new Animated.Value(1)).current;
-  const progressAnims = useRef(courses.map(() => new Animated.Value(0))).current;
+  const { user } = useAuth();
+  const { isDark, colors } = useTheme();
+  const isTeacher = user?.role === UserRole.TEACHER;
+
+  const bg       = isDark ? colors.background  : Colors.background;
+  const surface  = isDark ? colors.surface     : Colors.surface;
+  const txtPri   = isDark ? colors.textPrimary : Colors.textPrimary;
+  const txtMuted = isDark ? colors.textMuted   : Colors.textMuted;
+  const border   = isDark ? colors.border      : Colors.border;
+  const priSoft  = isDark ? colors.primarySoft : Colors.primarySoft;
+
+  const { data: classes = [], isLoading: classesLoading } = useQuery({
+    queryKey: isTeacher ? ['teacher-classes'] : ['enrolled-classes'],
+    queryFn: isTeacher ? classesService.getMyClasses : classesService.getEnrolledClasses,
+  });
+
+  const fade = useRef(new Animated.Value(0)).current;
+  const slide = useRef(new Animated.Value(24)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeIn, { toValue: 1, duration: 700, useNativeDriver: true }),
-      Animated.spring(slideUp, { toValue: 0, friction: 7, tension: 40, useNativeDriver: true }),
+      Animated.timing(fade, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.spring(slide, { toValue: 0, friction: 8, tension: 50, useNativeDriver: true }),
     ]).start();
-
-    courses.forEach((course, i) => {
-      Animated.timing(progressAnims[i], {
-        toValue: course.progress / 100,
-        duration: 1000, delay: 300 + i * 100,
-        useNativeDriver: false,
-      }).start();
-    });
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(mascotFloat, { toValue: -8, duration: 2000, useNativeDriver: true }),
-        Animated.timing(mascotFloat, { toValue: 0, duration: 2000, useNativeDriver: true }),
-      ])
-    ).start();
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(glowPulse, { toValue: 1.15, duration: 2200, useNativeDriver: true }),
-        Animated.timing(glowPulse, { toValue: 1, duration: 2200, useNativeDriver: true }),
-      ])
-    ).start();
   }, []);
 
-  const totalProgress = Math.round(
-    courses.reduce((acc, c) => acc + c.progress, 0) / courses.length
-  );
+  const handleAction = (label: string) => {
+    if (isTeacher) {
+      if (label === 'New Class') navigation.getParent?.()?.navigate('CreateClass');
+      else if (label === 'AI Brainstorm') navigation.navigate('AiBrainstorm');
+      else navigation.navigate('Classes');
+    } else {
+      if (label === 'Join Class') navigation.getParent?.()?.navigate('JoinClass');
+      else if (label === 'AI Tutor') navigation.navigate('AiTutor');
+      else navigation.navigate('Classes');
+    }
+  };
 
-  const completedLessons = courses.reduce(
-    (acc, c) => acc + Math.round((c.progress / 100) * c.lessons), 0
-  );
+  const actions = isTeacher ? TEACHER_ACTIONS : STUDENT_ACTIONS;
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#080818" />
-      <View style={styles.ring1} />
-      <Animated.View style={[styles.glowBlob, { transform: [{ scale: glowPulse }] }]} />
+    <View style={[styles.container, { backgroundColor: bg }]}>
+      <StatusBar barStyle="light-content" backgroundColor={Colors.primaryDark} />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-
-        {/* Header */}
-        <Animated.View style={[styles.header, { opacity: fadeIn }]}>
+      {/* ── Gradient header ── */}
+      <LinearGradient colors={Gradients.primary} style={styles.header}>
+        <View style={styles.headerRow}>
           <View>
-            <Text style={styles.greeting}>Good day! 👋</Text>
-            <Text style={styles.username}>{user?.username || 'Learner'}</Text>
+            <Text style={styles.greeting}>{getGreeting()},</Text>
+            <Text style={styles.username}>{user?.username ?? 'User'} 👋</Text>
           </View>
-          <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
-            <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-              <Path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="#C9A0DC" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-            </Svg>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* Hero Card */}
-        <Animated.View style={[styles.heroCard, { opacity: fadeIn, transform: [{ translateY: slideUp }] }]}>
-          <Animated.View style={[styles.glowBlobCard, { transform: [{ scale: glowPulse }] }]} />
-          <View style={styles.heroLeft}>
-            <View style={styles.heroBadge}>
-              <BotIcon size={12} color="#C9A0DC" />
-              <Text style={styles.heroBadgeText}>AI Tutor</Text>
+          {avatarUrl(user?.avatar) ? (
+            <Image source={{ uri: avatarUrl(user!.avatar)! }} style={styles.avatarCircle} />
+          ) : (
+            <View style={styles.avatarCircle}>
+              <Text style={styles.avatarInitial}>
+                {(user?.username ?? 'U')[0].toUpperCase()}
+              </Text>
             </View>
-            <Text style={styles.heroTitle}>Chat with{'\n'}Karya AI</Text>
-            <Text style={styles.heroSub}>Ask anything about programming</Text>
-            <TouchableOpacity
-              style={styles.heroBtn}
-              onPress={() => navigation.navigate('KaryaAI')}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.heroBtnText}>Start Chatting</Text>
-              <ArrowIcon color="#fff" size={14} />
-            </TouchableOpacity>
-          </View>
-          <Animated.Image
-            source={require('../assets/finalkaryachatlog.png')}
-            style={[styles.heroMascot, { transform: [{ translateY: mascotFloat }] }]}
-            resizeMode="contain"
-          />
-        </Animated.View>
+          )}
+        </View>
+        <View style={styles.roleBadge}>
+          <Text style={styles.roleBadgeText}>
+            {isTeacher ? '👨‍🏫 Teacher' : '🎓 Student'}
+          </Text>
+        </View>
+      </LinearGradient>
 
-        {/* Stats Row */}
-        <Animated.View style={[styles.statsRow, { opacity: fadeIn }]}>
-          {[
-            { icon: <FlameIcon size={20} />, val: '0', label: 'Day Streak' },
-            { icon: <TrophyIcon size={20} />, val: `${totalProgress}%`, label: 'Overall' },
-            { icon: <StarIcon size={20} />, val: `${completedLessons}`, label: 'Lessons' },
-          ].map((s, i) => (
-            <View key={i} style={styles.statCard}>
-              {s.icon}
-              <Text style={styles.statVal}>{s.val}</Text>
-              <Text style={styles.statLabel}>{s.label}</Text>
-            </View>
-          ))}
-        </Animated.View>
-
-        {/* Overall Progress */}
-        <Animated.View style={[styles.overallCard, { opacity: fadeIn }]}>
-          <View style={styles.overallHeader}>
-            <Text style={styles.overallTitle}>Overall Progress</Text>
-            <Text style={styles.overallPct}>{totalProgress}%</Text>
-          </View>
-          <View style={styles.overallTrack}>
-            <View style={[styles.overallFill, { width: `${totalProgress}%` }]} />
-          </View>
-          <Text style={styles.overallSub}>{completedLessons} lessons completed across all courses</Text>
-        </Animated.View>
-
-        {/* Courses Section */}
-        <Animated.View style={{ opacity: fadeIn }}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Courses</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Courses')}>
-              <Text style={styles.seeAll}>See all</Text>
-            </TouchableOpacity>
-          </View>
-
-          {courses.map((course, i) => (
-            <Animated.View
-              key={course.id}
-              style={[
-                styles.courseCard,
-                { borderLeftColor: course.color, backgroundColor: course.colorLight },
-                { opacity: fadeIn }
-              ]}
-            >
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={() => navigation.navigate('CourseDetail', { course, progress: course.progress })}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── AI banner ── */}
+        <Animated.View style={{ opacity: fade, transform: [{ translateY: slide }] }}>
+          <LinearGradient
+            colors={['#5B21B6', '#7C3AED']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.aiBanner}
+          >
+            <View style={styles.aiBannerContent}>
+              <Text style={styles.aiBannerTitle}>
+                {isTeacher ? 'Brainstorm Lessons' : 'Your AI Tutor'}
+              </Text>
+              <Text style={styles.aiBannerSub}>
+                {isTeacher
+                  ? 'Let AI help you design engaging lessons and quizzes.'
+                  : 'Ask any coding question — I\'ll guide you step by step.'}
+              </Text>
+              <Pressable
+                style={({ pressed }) => [styles.aiBannerBtn, pressed && { opacity: 0.85 }]}
+                onPress={() => navigation.navigate(isTeacher ? 'AiBrainstorm' : 'AiTutor')}
               >
-                <View style={styles.courseTop}>
-                  <View style={styles.courseIconWrap}>
-                    <Text style={styles.courseEmoji}>{course.icon}</Text>
-                  </View>
-                  <View style={styles.courseInfo}>
-                    <View style={styles.courseTitleRow}>
-                      <Text style={styles.courseTitle}>{course.title}</Text>
-                      <View style={[styles.levelBadge, { borderColor: course.color }]}>
-                        <Text style={[styles.levelText, { color: course.color }]}>{course.level}</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.courseLessons}>{course.lessons} lessons</Text>
-                  </View>
-                  <ArrowIcon size={16} />
+                <Text style={styles.aiBannerBtnText}>Start Chatting  →</Text>
+              </Pressable>
+            </View>
+            <Text style={styles.aiBannerEmoji}>🤖</Text>
+          </LinearGradient>
+        </Animated.View>
+
+        {/* ── Quick actions ── */}
+        <Animated.View style={{ opacity: fade, transform: [{ translateY: slide }] }}>
+          <Text style={[styles.sectionLabel, { color: txtPri }]}>Quick Actions</Text>
+          <View style={styles.actionsRow}>
+            {actions.map((a) => (
+              <ActionCard key={a.label} action={a} onPress={() => handleAction(a.label)} />
+            ))}
+          </View>
+        </Animated.View>
+
+        {/* ── Recent classes ── */}
+        <Animated.View style={{ opacity: fade }}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={[styles.sectionLabel, { color: txtPri }]}>
+              {isTeacher ? 'My Classes' : 'Enrolled Classes'}
+            </Text>
+            <Pressable onPress={() => navigation.navigate('Classes')}>
+              <Text style={[styles.seeAll, { color: colors.primary }]}>See All</Text>
+            </Pressable>
+          </View>
+
+          {classesLoading ? (
+            <ActivityIndicator color={colors.primary} style={{ marginVertical: 16 }} />
+          ) : classes.length === 0 ? (
+            <Pressable
+              style={[styles.emptyClassCard, { backgroundColor: surface, borderColor: priSoft }]}
+              onPress={() => navigation.navigate('Classes')}
+            >
+              <Text style={styles.emptyClassEmoji}>{isTeacher ? '📚' : '🎒'}</Text>
+              <Text style={[styles.emptyClassText, { color: colors.primary }]}>
+                {isTeacher ? 'Create your first class' : 'Join your first class'}
+              </Text>
+            </Pressable>
+          ) : (
+            classes.slice(0, 3).map((cls) => (
+              <Pressable
+                key={cls.id}
+                style={({ pressed }) => [styles.classCard, { backgroundColor: surface, borderColor: border }, pressed && { opacity: 0.9 }]}
+                onPress={() =>
+                  navigation.getParent?.()?.navigate(
+                    isTeacher ? 'TeacherClassDetail' : 'StudentClassDetail',
+                    { classId: cls.id },
+                  )
+                }
+              >
+                <View style={[styles.classIcon, { backgroundColor: priSoft }]}>
+                  <Text style={styles.classEmoji}>{langEmoji(cls.language)}</Text>
                 </View>
-                <View style={styles.progressRow}>
-                  <View style={styles.progressTrack}>
-                    <Animated.View
-                      style={[
-                        styles.progressFill,
-                        {
-                          backgroundColor: course.color,
-                          width: progressAnims[i].interpolate({
-                            inputRange: [0, 1],
-                            outputRange: ['0%', '100%'],
-                          }),
-                        }
-                      ]}
-                    />
-                  </View>
-                  <Text style={[styles.progressPct, { color: course.color }]}>
-                    {course.progress}%
+                <View style={styles.classInfo}>
+                  <Text style={[styles.classTitle, { color: txtPri }]}>{cls.name}</Text>
+                  <Text style={[styles.classSub, { color: txtMuted }]}>
+                    {isTeacher
+                      ? `${cls.lessons?.length ?? 0} lesson${(cls.lessons?.length ?? 0) !== 1 ? 's' : ''}`
+                      : `${cls.language} · ${cls.lessons?.length ?? 0} lessons`}
                   </Text>
                 </View>
-              </TouchableOpacity>
-            </Animated.View>
-          ))}
+                <ChevronRightIcon color={txtMuted} />
+              </Pressable>
+            ))
+          )}
         </Animated.View>
 
         <View style={{ height: 100 }} />
@@ -238,104 +284,228 @@ export default function DashboardScreen({ navigation }: any) {
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#080818' },
-  scroll: { paddingHorizontal: 20, paddingBottom: 20 },
-  ring1: {
-    position: 'absolute', width: width * 1.3, height: width * 1.3,
-    borderRadius: width * 0.65, borderWidth: 1,
-    borderColor: 'rgba(123,47,190,0.06)', top: -width * 0.5,
-  },
-  glowBlob: {
-    position: 'absolute', width: 300, height: 300, borderRadius: 150,
-    backgroundColor: 'rgba(75,0,130,0.15)', top: -60, right: -80,
-  },
+  container: { flex: 1, backgroundColor: Colors.background },
+
   header: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', paddingTop: 56, marginBottom: 20,
+    paddingTop: 56,
+    paddingBottom: 24,
+    paddingHorizontal: Spacing.screenH,
   },
-  greeting: { fontSize: 13, color: '#9B7EC8', fontWeight: '600', letterSpacing: 0.5 },
-  username: { fontSize: 24, fontWeight: '900', color: '#fff', marginTop: 2 },
-  logoutBtn: {
-    width: 42, height: 42, borderRadius: 13,
-    backgroundColor: 'rgba(123,47,190,0.15)',
-    justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1, borderColor: 'rgba(147,112,219,0.2)',
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
-  heroCard: {
-    backgroundColor: '#1A0A35', borderRadius: 24, padding: 20,
-    marginBottom: 16, overflow: 'hidden', flexDirection: 'row',
-    alignItems: 'center', borderWidth: 1, borderColor: 'rgba(123,47,190,0.3)',
-    shadowColor: '#7B2FBE', shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3, shadowRadius: 20, elevation: 10,
+  greeting: {
+    fontFamily: Typography.fontFamily.regular,
+    fontSize: Typography.size.sm,
+    color: 'rgba(255,255,255,0.8)',
   },
-  glowBlobCard: {
-    position: 'absolute', width: 200, height: 200, borderRadius: 100,
-    backgroundColor: 'rgba(123,47,190,0.2)', right: -40, top: -40,
+  username: {
+    fontFamily: Typography.fontFamily.extraBold,
+    fontSize: Typography.size['2xl'],
+    color: Colors.textInverse,
+    marginTop: 2,
   },
-  heroLeft: { flex: 1, zIndex: 1 },
-  heroBadge: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: 'rgba(123,47,190,0.25)', borderRadius: 20,
-    paddingHorizontal: 10, paddingVertical: 4, alignSelf: 'flex-start',
-    gap: 5, marginBottom: 10, borderWidth: 1, borderColor: 'rgba(147,112,219,0.3)',
+  avatarCircle: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.45)',
   },
-  heroBadgeText: { color: '#C9A0DC', fontSize: 11, fontWeight: '700' },
-  heroTitle: { fontSize: 22, fontWeight: '900', color: '#fff', lineHeight: 28, marginBottom: 6 },
-  heroSub: { fontSize: 12, color: 'rgba(201,160,220,0.7)', marginBottom: 14 },
-  heroBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: '#7B2FBE', borderRadius: 12,
-    paddingHorizontal: 14, paddingVertical: 9, alignSelf: 'flex-start',
+  avatarInitial: {
+    fontFamily: Typography.fontFamily.bold,
+    fontSize: Typography.size.lg,
+    color: Colors.textInverse,
   },
-  heroBtnText: { color: '#fff', fontSize: 13, fontWeight: '800' },
-  heroMascot: { width: 110, height: 110, marginRight: -8 },
-  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
-  statCard: {
-    flex: 1, backgroundColor: '#0E0E28', borderRadius: 16,
-    padding: 14, alignItems: 'center', gap: 4,
-    borderWidth: 1, borderColor: 'rgba(123,47,190,0.18)',
+  roleBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: Radius.full,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
-  statVal: { fontSize: 20, fontWeight: '900', color: '#fff' },
-  statLabel: { fontSize: 10, color: '#7B5EA7', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-  overallCard: {
-    backgroundColor: '#0E0E28', borderRadius: 20, padding: 18,
-    marginBottom: 24, borderWidth: 1, borderColor: 'rgba(123,47,190,0.18)',
+  roleBadgeText: {
+    fontFamily: Typography.fontFamily.semiBold,
+    fontSize: Typography.size.xs,
+    color: Colors.textInverse,
   },
-  overallHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  overallTitle: { fontSize: 15, fontWeight: '800', color: '#fff' },
-  overallPct: { fontSize: 15, fontWeight: '900', color: '#9B59B6' },
-  overallTrack: {
-    height: 8, backgroundColor: 'rgba(123,47,190,0.15)',
-    borderRadius: 4, overflow: 'hidden', marginBottom: 8,
+
+  scroll: { flex: 1 },
+  content: {
+    padding: Spacing.screenH,
+    paddingTop: Spacing['5'],
   },
-  overallFill: { height: '100%', borderRadius: 4, backgroundColor: '#7B2FBE' },
-  overallSub: { fontSize: 12, color: '#5A4A7A', fontWeight: '500' },
-  sectionHeader: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', marginBottom: 14,
+
+  // AI banner
+  aiBanner: {
+    borderRadius: Radius.xl,
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing['6'],
+    ...Shadows.md,
   },
-  sectionTitle: { fontSize: 18, fontWeight: '900', color: '#fff' },
-  seeAll: { fontSize: 13, color: '#9B59B6', fontWeight: '700' },
-  courseCard: { borderRadius: 18, padding: 16, marginBottom: 12, borderLeftWidth: 3 },
-  courseTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  courseIconWrap: {
-    width: 44, height: 44, borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    justifyContent: 'center', alignItems: 'center', marginRight: 12,
+  aiBannerContent: { flex: 1 },
+  aiBannerTitle: {
+    fontFamily: Typography.fontFamily.bold,
+    fontSize: Typography.size.md,
+    color: Colors.textInverse,
+    marginBottom: 4,
   },
-  courseEmoji: { fontSize: 22 },
-  courseInfo: { flex: 1 },
-  courseTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 3 },
-  courseTitle: { flex: 1, fontSize: 15, fontWeight: '800', color: '#fff' },
-  levelBadge: { borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1 },
-  levelText: { fontSize: 9, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
-  courseLessons: { fontSize: 12, color: '#7B5EA7' },
-  progressRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  aiBannerSub: {
+    fontFamily: Typography.fontFamily.regular,
+    fontSize: Typography.size.xs,
+    color: 'rgba(255,255,255,0.82)',
+    lineHeight: 17,
+    marginBottom: 12,
+  },
+  aiBannerBtn: {
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    borderRadius: Radius.full,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
+  },
+  aiBannerBtnText: {
+    fontFamily: Typography.fontFamily.semiBold,
+    fontSize: Typography.size.sm,
+    color: Colors.textInverse,
+  },
+  aiBannerEmoji: { fontSize: 54, marginLeft: 8 },
+
+  // Section labels
+  sectionLabel: {
+    fontFamily: Typography.fontFamily.bold,
+    fontSize: Typography.size.lg,
+    color: Colors.textPrimary,
+    marginBottom: Spacing['3'],
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing['3'],
+  },
+  seeAll: {
+    fontFamily: Typography.fontFamily.semiBold,
+    fontSize: Typography.size.sm,
+    color: Colors.primary,
+  },
+
+  // Quick actions
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: Spacing['6'],
+  },
+  actionCard: {
+    flex: 1,
+    borderRadius: Radius.lg,
+    padding: 14,
+    alignItems: 'center',
+    gap: 8,
+    ...Shadows.sm,
+  },
+  actionIconWrap: {
+    width: 46,
+    height: 46,
+    borderRadius: Radius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionLabel: {
+    fontFamily: Typography.fontFamily.semiBold,
+    fontSize: Typography.size.xs,
+    textAlign: 'center',
+  },
+
+  // Class cards
+  classCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    padding: Spacing['4'],
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.sm,
+  },
+  classIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: Radius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  classEmoji: { fontSize: 26 },
+  classInfo: { flex: 1 },
+  classTitle: {
+    fontFamily: Typography.fontFamily.semiBold,
+    fontSize: Typography.size.base,
+    color: Colors.textPrimary,
+    marginBottom: 2,
+  },
+  classSub: {
+    fontFamily: Typography.fontFamily.regular,
+    fontSize: Typography.size.xs,
+    color: Colors.textMuted,
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 6,
+  },
   progressTrack: {
-    flex: 1, height: 5, backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 3, overflow: 'hidden',
+    flex: 1,
+    height: 5,
+    backgroundColor: Colors.border,
+    borderRadius: 3,
+    overflow: 'hidden',
   },
-  progressFill: { height: '100%', borderRadius: 3 },
-  progressPct: { fontSize: 12, fontWeight: '800', minWidth: 35, textAlign: 'right' },
+  progressFill: {
+    height: '100%',
+    backgroundColor: Colors.primary,
+    borderRadius: 3,
+  },
+  progressLabel: {
+    fontFamily: Typography.fontFamily.semiBold,
+    fontSize: Typography.size.xs,
+    color: Colors.primary,
+    minWidth: 32,
+    textAlign: 'right',
+  },
+
+  emptyClassCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderWidth: 1.5,
+    borderColor: Colors.primarySoft,
+    borderStyle: 'dashed',
+  },
+  emptyClassEmoji: { fontSize: 28 },
+  emptyClassText: {
+    fontFamily: Typography.fontFamily.semiBold,
+    fontSize: Typography.size.sm,
+    color: Colors.primary,
+  },
 });

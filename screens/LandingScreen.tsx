@@ -1,153 +1,77 @@
 import React, { useRef, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
-  Animated, Dimensions, StatusBar, ScrollView,
+  View, Text, StyleSheet, Pressable,
+  Animated, Dimensions, StatusBar, Image, ScrollView,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Colors, Typography, Spacing, Radius, Shadows, Gradients } from '../constants/theme';
 
 const { width, height } = Dimensions.get('window');
 
+const FEATURES = [
+  { icon: '🤖', title: 'AI-Powered Tutor', desc: 'Get instant help from CodeMate AI' },
+  { icon: '📚', title: 'Structured Lessons', desc: 'Learn through teacher-curated content' },
+  { icon: '🏆', title: 'Practice Quizzes', desc: 'Test your skills and track progress' },
+];
+
 export default function LandingScreen({ navigation }: any) {
   const fadeIn = useRef(new Animated.Value(0)).current;
-  const slideUp = useRef(new Animated.Value(80)).current;
-  const mascotFloat = useRef(new Animated.Value(0)).current;
-  const glowPulse = useRef(new Animated.Value(1)).current;
-  const card1 = useRef(new Animated.Value(0)).current;
-  const card2 = useRef(new Animated.Value(0)).current;
-  const card3 = useRef(new Animated.Value(0)).current;
+  const slideUp = useRef(new Animated.Value(60)).current;
+  const logoFloat = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeIn, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.timing(fadeIn, { toValue: 1, duration: 700, useNativeDriver: true }),
       Animated.spring(slideUp, { toValue: 0, friction: 8, tension: 40, useNativeDriver: true }),
     ]).start();
 
-    Animated.stagger(120, [
-      Animated.spring(card1, { toValue: 1, friction: 6, useNativeDriver: true }),
-      Animated.spring(card2, { toValue: 1, friction: 6, useNativeDriver: true }),
-      Animated.spring(card3, { toValue: 1, friction: 6, useNativeDriver: true }),
-    ]).start();
-
     Animated.loop(
       Animated.sequence([
-        Animated.timing(mascotFloat, { toValue: -16, duration: 2200, useNativeDriver: true }),
-        Animated.timing(mascotFloat, { toValue: 0, duration: 2200, useNativeDriver: true }),
-      ])
-    ).start();
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(glowPulse, { toValue: 1.25, duration: 2000, useNativeDriver: true }),
-        Animated.timing(glowPulse, { toValue: 1, duration: 2000, useNativeDriver: true }),
+        Animated.timing(logoFloat, { toValue: -10, duration: 2400, useNativeDriver: true }),
+        Animated.timing(logoFloat, { toValue: 0, duration: 2400, useNativeDriver: true }),
       ])
     ).start();
   }, []);
 
-  const featureCards = [
-    { icon: '🤖', title: 'Chat with\nKarya AI', subtitle: 'Get instant help', color: '#7B2FBE', textColor: '#fff' },
-    { icon: '📚', title: 'Courses', subtitle: 'Structured learning', color: '#9B59B6', textColor: '#fff' },
-    { icon: '📝', title: 'Assessments', subtitle: 'Test your skills', color: '#1A1A35', textColor: '#C9A0DC', border: true },
-  ];
-
-  const cardAnims = [card1, card2, card3];
-
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#080818" />
+      <StatusBar barStyle="light-content" backgroundColor={Colors.primaryDark} />
 
-      {/* Background */}
-      <View style={styles.ring1} />
-      <View style={styles.ring2} />
-      <Animated.View style={[styles.glowBlob, { transform: [{ scale: glowPulse }] }]} />
+      {/* Purple hero area */}
+      <LinearGradient colors={Gradients.primary} style={styles.hero}>
+        <Animated.View style={{ opacity: fadeIn, transform: [{ translateY: logoFloat }] }}>
+          <Image
+            source={require('../assets/CodeMate_official_log-removebg-preview.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </Animated.View>
+        <Animated.Text style={[styles.heroTitle, { opacity: fadeIn }]}>
+          Learn to Code Smarter
+        </Animated.Text>
+        <Animated.Text style={[styles.heroSub, { opacity: fadeIn }]}>
+          AI-powered lessons, quizzes, and a tutor{'\n'}that's always there for you
+        </Animated.Text>
+      </LinearGradient>
 
-      {/* Top bar */}
-      <Animated.View style={[styles.topBar, { opacity: fadeIn }]}>
-        <View>
-          <Text style={styles.appName}>KaryaChat</Text>
-          <Text style={styles.appSub}>AI Programming Tutor</Text>
-        </View>
-        <View style={styles.onlinePill}>
-          <View style={styles.onlineDot} />
-          <Text style={styles.onlineText}>Online</Text>
-        </View>
-      </Animated.View>
+      {/* White bottom sheet */}
+      <Animated.View style={[styles.sheet, { transform: [{ translateY: slideUp }] }]}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetContent}>
 
-      {/* Mascot area */}
-      <Animated.Image
-        source={require('../assets/finalkaryachatlog.png')}
-        style={[
-          styles.mascot,
-          { opacity: fadeIn, transform: [{ translateY: mascotFloat }] }
-        ]}
-        resizeMode="contain"
-      />
-
-      {/* Bottom sheet */}
-      <Animated.View style={[
-        styles.sheet,
-        { opacity: fadeIn, transform: [{ translateY: slideUp }] }
-      ]}>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Greeting */}
-          <Text style={styles.greeting}>Hi there! 👋</Text>
-          <Text style={styles.headline}>How may I help{'\n'}you today?</Text>
-
-          {/* Feature cards */}
-          <View style={styles.cardsGrid}>
-            {/* Big card */}
-            <Animated.View style={[
-              styles.bigCardWrap,
-              { opacity: card1, transform: [{ scale: card1 }] }
-            ]}>
-              <TouchableOpacity
-                style={styles.bigCard}
-                onPress={() => navigation.navigate('Register')}
-                activeOpacity={0.85}
-              >
-                <View style={styles.bigCardContent}>
-                  <Text style={styles.bigCardIcon}>🤖</Text>
-                  <View>
-                    <Text style={styles.bigCardTitle}>Chat with Karya</Text>
-                    <Text style={styles.bigCardSub}>Your AI coding buddy</Text>
-                  </View>
-                </View>
-                <Text style={styles.cardArrow}>↗</Text>
-              </TouchableOpacity>
-            </Animated.View>
-
-            {/* Small cards row */}
-            <View style={styles.smallCardsRow}>
-              {[
-                { icon: '📚', label: 'Courses', anim: card2 },
-                { icon: '📝', label: 'Quizzes', anim: card3 },
-              ].map((c) => (
-                <Animated.View
-                  key={c.label}
-                  style={[
-                    styles.smallCardWrap,
-                    { opacity: c.anim, transform: [{ scale: c.anim }] }
-                  ]}
-                >
-                  <TouchableOpacity
-                    style={styles.smallCard}
-                    onPress={() => navigation.navigate('Register')}
-                    activeOpacity={0.85}
-                  >
-                    <Text style={styles.smallCardIcon}>{c.icon}</Text>
-                    <Text style={styles.smallCardLabel}>{c.label}</Text>
-                    <Text style={styles.cardArrow}>↗</Text>
-                  </TouchableOpacity>
-                </Animated.View>
-              ))}
-            </View>
+          {/* Feature pills */}
+          <View style={styles.featureRow}>
+            {FEATURES.map((f) => (
+              <View key={f.title} style={styles.featureCard}>
+                <Text style={styles.featureIcon}>{f.icon}</Text>
+                <Text style={styles.featureTitle}>{f.title}</Text>
+                <Text style={styles.featureDesc}>{f.desc}</Text>
+              </View>
+            ))}
           </View>
 
-          {/* Stats row */}
+          {/* Stats */}
           <View style={styles.statsRow}>
-            {[
-              { val: '50+', label: 'Lessons' },
-              { val: '10+', label: 'Courses' },
-              { val: '24/7', label: 'AI Support' },
-            ].map((s) => (
+            {[{ val: '50+', label: 'Lessons' }, { val: '10+', label: 'Courses' }, { val: '24/7', label: 'AI Support' }].map((s) => (
               <View key={s.label} style={styles.statItem}>
                 <Text style={styles.statVal}>{s.val}</Text>
                 <Text style={styles.statLabel}>{s.label}</Text>
@@ -155,22 +79,30 @@ export default function LandingScreen({ navigation }: any) {
             ))}
           </View>
 
-          {/* CTA */}
-          <TouchableOpacity
-            style={styles.primaryBtn}
+          {/* CTA buttons */}
+          <Pressable
+            style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}
             onPress={() => navigation.navigate('Register')}
-            activeOpacity={0.88}
           >
-            <Text style={styles.primaryBtnText}>Get Started  →</Text>
-          </TouchableOpacity>
+            <LinearGradient colors={Gradients.primary} style={styles.primaryBtnGrad}>
+              <Text style={styles.primaryBtnText}>Get Started  →</Text>
+            </LinearGradient>
+          </Pressable>
 
-          <TouchableOpacity
-            style={styles.secondaryBtn}
+          <Pressable
+            style={({ pressed }) => [styles.secondaryBtn, pressed && styles.pressed]}
             onPress={() => navigation.navigate('Login')}
-            activeOpacity={0.85}
           >
-            <Text style={styles.secondaryBtnText}>Already have an account? Login</Text>
-          </TouchableOpacity>
+            <Text style={styles.secondaryBtnText}>Already have an account? Log In</Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [styles.ghostBtn, pressed && styles.pressed]}
+            onPress={() => navigation.navigate('Guest')}
+          >
+            <Text style={styles.ghostBtnText}>Explore as Guest</Text>
+          </Pressable>
+
         </ScrollView>
       </Animated.View>
     </View>
@@ -178,124 +110,130 @@ export default function LandingScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#080818', alignItems: 'center' },
-  ring1: {
-    position: 'absolute',
-    width: width * 1.2, height: width * 1.2,
-    borderRadius: width * 0.6,
-    borderWidth: 1, borderColor: 'rgba(123,47,190,0.07)',
-    top: -width * 0.35,
-  },
-  ring2: {
-    position: 'absolute',
-    width: width * 0.8, height: width * 0.8,
-    borderRadius: width * 0.4,
-    borderWidth: 1, borderColor: 'rgba(123,47,190,0.12)',
-    top: -width * 0.12,
-  },
-  glowBlob: {
-    position: 'absolute',
-    width: 280, height: 280, borderRadius: 140,
-    backgroundColor: 'rgba(75,0,130,0.2)',
-    top: height * 0.06,
-  },
-  topBar: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  container: { flex: 1, backgroundColor: Colors.primaryDark },
+
+  hero: {
+    height: height * 0.45,
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 52,
-    marginBottom: 4,
+    justifyContent: 'center',
+    paddingTop: 48,
+    paddingHorizontal: Spacing.screenH,
   },
-  appName: { fontSize: 22, fontWeight: '900', color: '#fff', letterSpacing: 1 },
-  appSub: { fontSize: 11, color: '#9B59B6', fontWeight: '600', letterSpacing: 0.5 },
-  onlinePill: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: 'rgba(123,47,190,0.15)',
-    borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5,
-    gap: 5, borderWidth: 1, borderColor: 'rgba(147,112,219,0.25)',
+  logo: { width: 160, height: 100, marginBottom: 8 },
+  heroTitle: {
+    fontFamily: Typography.fontFamily.extraBold,
+    fontSize: Typography.size['3xl'],
+    color: Colors.textInverse,
+    textAlign: 'center',
+    marginBottom: 10,
   },
-  onlineDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#7CFC00' },
-  onlineText: { color: '#C9A0DC', fontSize: 11, fontWeight: '600' },
-  mascot: {
-    width: width * 0.62,
-    height: width * 0.62,
-    marginTop: 4,
+  heroSub: {
+    fontFamily: Typography.fontFamily.regular,
+    fontSize: Typography.size.sm,
+    color: Colors.primarySoft,
+    textAlign: 'center',
+    lineHeight: Typography.size.sm * Typography.lineHeight.relaxed,
   },
+
   sheet: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    backgroundColor: '#0E0E28',
-    borderTopLeftRadius: 36,
-    borderTopRightRadius: 36,
-    paddingHorizontal: 22,
-    paddingTop: 22,
-    paddingBottom: 36,
-    borderTopWidth: 1,
-    borderColor: 'rgba(123,47,190,0.2)',
-    maxHeight: height * 0.62,
+    flex: 1,
+    backgroundColor: Colors.surface,
+    borderTopLeftRadius: Radius['2xl'],
+    borderTopRightRadius: Radius['2xl'],
+    marginTop: -Radius['2xl'],
+    ...Shadows.lg,
   },
-  greeting: {
-    fontSize: 13, color: '#9B59B6',
-    fontWeight: '700', letterSpacing: 0.5, marginBottom: 4,
+  sheetContent: {
+    paddingHorizontal: Spacing.screenH,
+    paddingTop: Spacing['6'],
+    paddingBottom: Spacing['10'],
   },
-  headline: {
-    fontSize: 26, fontWeight: '900',
-    color: '#fff', lineHeight: 33, marginBottom: 18,
-  },
-  cardsGrid: { gap: 10, marginBottom: 16 },
-  bigCardWrap: { width: '100%' },
-  bigCard: {
-    backgroundColor: '#7B2FBE',
-    borderRadius: 20, padding: 18,
+
+  featureRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 10,
+    marginBottom: Spacing['6'],
+  },
+  featureCard: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    borderRadius: Radius.lg,
+    padding: 12,
     alignItems: 'center',
-    shadowColor: '#7B2FBE',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4, shadowRadius: 16, elevation: 8,
+    borderWidth: 1,
+    borderColor: Colors.primaryBorder,
   },
-  bigCardContent: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  bigCardIcon: { fontSize: 32 },
-  bigCardTitle: { fontSize: 17, fontWeight: '800', color: '#fff' },
-  bigCardSub: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
-  cardArrow: { fontSize: 18, color: 'rgba(255,255,255,0.5)' },
-  smallCardsRow: { flexDirection: 'row', gap: 10 },
-  smallCardWrap: { flex: 1 },
-  smallCard: {
-    backgroundColor: '#1A1A35',
-    borderRadius: 20, padding: 16,
-    flexDirection: 'row', alignItems: 'center',
-    gap: 8, borderWidth: 1,
-    borderColor: 'rgba(147,112,219,0.2)',
+  featureIcon: { fontSize: 22, marginBottom: 6 },
+  featureTitle: {
+    fontFamily: Typography.fontFamily.bold,
+    fontSize: Typography.size.xs,
+    color: Colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: 3,
   },
-  smallCardIcon: { fontSize: 22 },
-  smallCardLabel: { flex: 1, fontSize: 14, fontWeight: '700', color: '#fff' },
+  featureDesc: {
+    fontFamily: Typography.fontFamily.regular,
+    fontSize: Typography.size.xs,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 15,
+  },
+
   statsRow: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(123,47,190,0.1)',
-    borderRadius: 16, padding: 14,
-    marginBottom: 16, borderWidth: 1,
-    borderColor: 'rgba(147,112,219,0.15)',
+    backgroundColor: Colors.primarySoft,
+    borderRadius: Radius.lg,
+    paddingVertical: Spacing['4'],
+    marginBottom: Spacing['6'],
+    borderWidth: 1,
+    borderColor: Colors.primaryBorder,
   },
   statItem: { flex: 1, alignItems: 'center' },
-  statVal: { fontSize: 20, fontWeight: '900', color: '#fff' },
-  statLabel: { fontSize: 11, color: '#C9A0DC', marginTop: 2, fontWeight: '600' },
-  primaryBtn: {
-    backgroundColor: '#7B2FBE',
-    borderRadius: 16, paddingVertical: 16,
-    alignItems: 'center', marginBottom: 12,
-    shadowColor: '#7B2FBE',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.45, shadowRadius: 16, elevation: 10,
+  statVal: {
+    fontFamily: Typography.fontFamily.extraBold,
+    fontSize: Typography.size.xl,
+    color: Colors.primary,
   },
-  primaryBtnText: { color: '#fff', fontSize: 17, fontWeight: '800', letterSpacing: 0.5 },
+  statLabel: {
+    fontFamily: Typography.fontFamily.medium,
+    fontSize: Typography.size.xs,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+
+  primaryBtn: { borderRadius: Radius.full, overflow: 'hidden', marginBottom: 12 },
+  primaryBtnGrad: {
+    paddingVertical: 16,
+    alignItems: 'center',
+    borderRadius: Radius.full,
+  },
+  primaryBtnText: {
+    fontFamily: Typography.fontFamily.bold,
+    fontSize: Typography.size.md,
+    color: Colors.textInverse,
+    letterSpacing: 0.3,
+  },
+
   secondaryBtn: {
-    borderRadius: 16, paddingVertical: 13,
-    alignItems: 'center', borderWidth: 1,
-    borderColor: 'rgba(147,112,219,0.3)',
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+    borderRadius: Radius.full,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginBottom: 10,
   },
-  secondaryBtnText: { color: '#C9A0DC', fontSize: 14, fontWeight: '600' },
+  secondaryBtnText: {
+    fontFamily: Typography.fontFamily.semiBold,
+    fontSize: Typography.size.base,
+    color: Colors.primary,
+  },
+
+  ghostBtn: { paddingVertical: 12, alignItems: 'center' },
+  ghostBtnText: {
+    fontFamily: Typography.fontFamily.medium,
+    fontSize: Typography.size.sm,
+    color: Colors.textSecondary,
+  },
+
+  pressed: { opacity: 0.8 },
 });

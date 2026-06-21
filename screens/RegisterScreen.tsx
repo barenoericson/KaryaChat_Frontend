@@ -1,86 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
+  View, Text, TextInput, Pressable, StyleSheet,
   ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
-  Animated, Dimensions, StatusBar, ScrollView,
+  Animated, Dimensions, StatusBar, ScrollView, Image,
 } from 'react-native';
-import Svg, { Path, Circle, Rect } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../constants/api';
+import { Colors, Typography, Spacing, Radius, Shadows, Gradients } from '../constants/theme';
 
 const { width } = Dimensions.get('window');
 
-// SVG Icons
-const BackIcon = () => (
-  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-    <Path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="#C9A0DC" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-  </Svg>
-);
+type Role = 'teacher' | 'student';
 
-const UserIcon = () => (
-  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-    <Path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#7B5EA7" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <Circle cx={12} cy={7} r={4} stroke="#7B5EA7" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-  </Svg>
-);
-
-const EmailIcon = () => (
-  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-    <Path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="#7B5EA7" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <Path d="M22 6l-10 7L2 6" stroke="#7B5EA7" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-  </Svg>
-);
-
-const LockIcon = () => (
-  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-    <Rect x={3} y={11} width={18} height={11} rx={2} ry={2} stroke="#7B5EA7" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <Path d="M7 11V7a5 5 0 0110 0v4" stroke="#7B5EA7" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-  </Svg>
-);
-
-const ShieldIcon = () => (
-  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#7B5EA7" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-  </Svg>
-);
-
-const EyeIcon = ({ visible }: { visible: boolean }) => (
-  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-    {visible ? (
-      <>
-        <Path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" stroke="#7B5EA7" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-        <Path d="M1 1l22 22" stroke="#7B5EA7" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-      </>
-    ) : (
-      <>
-        <Path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="#7B5EA7" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-        <Circle cx={12} cy={12} r={3} stroke="#7B5EA7" strokeWidth={2} />
-      </>
-    )}
-  </Svg>
-);
-
-const ArrowIcon = () => (
-  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-    <Path d="M5 12h14M12 5l7 7-7 7" stroke="#fff" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-  </Svg>
-);
-
-const getStrengthColor = (len: number) => {
-  if (len < 6) return '#E74C3C';
-  if (len < 9) return '#F39C12';
-  if (len < 12) return '#2ECC71';
-  return '#9B59B6';
-};
-
-const getStrengthLabel = (len: number) => {
-  if (len === 0) return '';
-  if (len < 6) return 'Weak';
-  if (len < 9) return 'Fair';
-  if (len < 12) return 'Good';
-  return 'Strong';
-};
+const ROLE_OPTIONS: { value: Role; label: string; icon: string; desc: string }[] = [
+  { value: 'teacher', label: "I'm a Teacher", icon: '👨‍🏫', desc: 'Create classes & lessons' },
+  { value: 'student', label: "I'm a Student", icon: '🎓', desc: 'Join classes & learn' },
+];
 
 export default function RegisterScreen({ navigation }: any) {
   const { login } = useAuth();
@@ -88,222 +25,223 @@ export default function RegisterScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState<Role>('student');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [focused, setFocused] = useState<string | null>(null);
 
   const fadeIn = useRef(new Animated.Value(0)).current;
-  const slideUp = useRef(new Animated.Value(50)).current;
-  const mascotBounce = useRef(new Animated.Value(0)).current;
-  const glowPulse = useRef(new Animated.Value(1)).current;
+  const slideUp = useRef(new Animated.Value(40)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeIn, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.spring(slideUp, { toValue: 0, friction: 7, tension: 40, useNativeDriver: true }),
+      Animated.timing(fadeIn, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.spring(slideUp, { toValue: 0, friction: 8, tension: 45, useNativeDriver: true }),
     ]).start();
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(mascotBounce, { toValue: -10, duration: 2200, useNativeDriver: true }),
-        Animated.timing(mascotBounce, { toValue: 0, duration: 2200, useNativeDriver: true }),
-      ])
-    ).start();
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(glowPulse, { toValue: 1.2, duration: 2000, useNativeDriver: true }),
-        Animated.timing(glowPulse, { toValue: 1, duration: 2000, useNativeDriver: true }),
-      ])
-    ).start();
   }, []);
 
   const handleRegister = async () => {
-    if (!username || !email || !password || !confirmPassword) {
-      Alert.alert('Oops!', 'Please fill in all fields');
+    if (!username.trim() || !email.trim() || !password || !confirmPassword) {
+      Alert.alert('Missing fields', 'Please fill in all fields.');
       return;
     }
     if (password.length < 6) {
-      Alert.alert('Weak Password', 'Password must be at least 6 characters');
+      Alert.alert('Weak password', 'Password must be at least 6 characters.');
       return;
     }
     if (password !== confirmPassword) {
-      Alert.alert('Mismatch!', 'Passwords do not match');
+      Alert.alert('Passwords do not match', 'Please make sure both passwords are the same.');
       return;
     }
     try {
       setLoading(true);
-      const res = await axios.post(`${API_BASE_URL}/auth/register`, { username, email, password });
+      const res = await axios.post(`${API_BASE_URL}/auth/register`, {
+        username: username.trim(),
+        email: email.trim().toLowerCase(),
+        password,
+        role,
+      });
       await login(res.data.token, res.data.user);
     } catch (e: any) {
-      Alert.alert('Registration Failed', e.response?.data?.message || 'Something went wrong');
+      const msg = e.response?.data?.message;
+      Alert.alert('Registration Failed', Array.isArray(msg) ? msg.join('\n') : (msg || 'Something went wrong.'));
     } finally {
       setLoading(false);
     }
   };
 
-  const strengthColor = getStrengthColor(password.length);
-  const strengthLabel = getStrengthLabel(password.length);
-  const strengthBars = Math.min(Math.floor(password.length / 3), 4);
+  const strengthLevel = Math.min(Math.floor(password.length / 3), 4);
+  const strengthColor = ['#EF4444', '#F59E0B', '#F59E0B', '#10B981', '#10B981'][strengthLevel];
+  const strengthLabel = ['', 'Weak', 'Fair', 'Good', 'Strong'][strengthLevel];
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <StatusBar barStyle="light-content" backgroundColor="#080818" />
-      <View style={styles.ring1} />
-      <View style={styles.ring2} />
-      <Animated.View style={[styles.glowBlob, { transform: [{ scale: glowPulse }] }]} />
+      <StatusBar barStyle="light-content" backgroundColor={Colors.primaryDark} />
+
+      {/* Purple header */}
+      <LinearGradient colors={Gradients.primary} style={styles.header}>
+        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Text style={styles.backArrow}>←</Text>
+        </Pressable>
+        <Image
+          source={require('../assets/CodeMate_official_log-removebg-preview.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        <Text style={styles.headerTitle}>Create Account</Text>
+        <Text style={styles.headerSub}>Join CodeMate and start your journey</Text>
+      </LinearGradient>
 
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Top bar: back left, mascot center */}
-        <Animated.View style={[styles.topBar, { opacity: fadeIn }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <BackIcon />
-          </TouchableOpacity>
-          <Animated.Image
-            source={require('../assets/finalkaryachatlog.png')}
-            style={[styles.mascot, { transform: [{ translateY: mascotBounce }] }]}
-            resizeMode="contain"
-          />
-          <View style={styles.backBtnSpacer} />
-        </Animated.View>
+        <Animated.View style={[styles.card, { opacity: fadeIn, transform: [{ translateY: slideUp }] }]}>
 
-        {/* Form card */}
-        <Animated.View style={[
-          styles.card,
-          { opacity: fadeIn, transform: [{ translateY: slideUp }] }
-        ]}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join KaryaChat and start learning to code</Text>
+          {/* Role selector */}
+          <Text style={styles.label}>I am a...</Text>
+          <View style={styles.roleRow}>
+            {ROLE_OPTIONS.map((opt) => {
+              const selected = role === opt.value;
+              return (
+                <Pressable
+                  key={opt.value}
+                  style={[styles.roleCard, selected && styles.roleCardSelected]}
+                  onPress={() => setRole(opt.value)}
+                >
+                  <Text style={styles.roleIcon}>{opt.icon}</Text>
+                  <Text style={[styles.roleLabel, selected && styles.roleLabelSelected]}>
+                    {opt.label}
+                  </Text>
+                  <Text style={[styles.roleDesc, selected && styles.roleDescSelected]}>
+                    {opt.desc}
+                  </Text>
+                  {selected && (
+                    <View style={styles.checkBadge}>
+                      <Text style={styles.checkMark}>✓</Text>
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
 
           {/* Username */}
           <Text style={styles.label}>Username</Text>
-          <View style={[styles.inputWrap, focusedField === 'username' && styles.inputWrapFocused]}>
-            <UserIcon />
+          <View style={[styles.inputWrap, focused === 'username' && styles.inputFocused]}>
+            <Text style={styles.inputIcon}>👤</Text>
             <TextInput
               style={styles.input}
               placeholder="Choose a username"
-              placeholderTextColor="#3D2E5A"
+              placeholderTextColor={Colors.textMuted}
               value={username}
               onChangeText={setUsername}
               autoCapitalize="none"
-              onFocus={() => setFocusedField('username')}
-              onBlur={() => setFocusedField(null)}
+              onFocus={() => setFocused('username')}
+              onBlur={() => setFocused(null)}
             />
           </View>
 
           {/* Email */}
           <Text style={styles.label}>Email Address</Text>
-          <View style={[styles.inputWrap, focusedField === 'email' && styles.inputWrapFocused]}>
-            <EmailIcon />
+          <View style={[styles.inputWrap, focused === 'email' && styles.inputFocused]}>
+            <Text style={styles.inputIcon}>✉️</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter your email"
-              placeholderTextColor="#3D2E5A"
+              placeholder="you@example.com"
+              placeholderTextColor={Colors.textMuted}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
-              onFocus={() => setFocusedField('email')}
-              onBlur={() => setFocusedField(null)}
+              autoCorrect={false}
+              onFocus={() => setFocused('email')}
+              onBlur={() => setFocused(null)}
             />
           </View>
 
           {/* Password */}
           <Text style={styles.label}>Password</Text>
-          <View style={[styles.inputWrap, focusedField === 'password' && styles.inputWrapFocused]}>
-            <LockIcon />
+          <View style={[styles.inputWrap, focused === 'password' && styles.inputFocused]}>
+            <Text style={styles.inputIcon}>🔒</Text>
             <TextInput
               style={styles.input}
-              placeholder="Create a password"
-              placeholderTextColor="#3D2E5A"
+              placeholder="At least 6 characters"
+              placeholderTextColor={Colors.textMuted}
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
-              onFocus={() => setFocusedField('password')}
-              onBlur={() => setFocusedField(null)}
+              onFocus={() => setFocused('password')}
+              onBlur={() => setFocused(null)}
             />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-              <EyeIcon visible={showPassword} />
-            </TouchableOpacity>
+            <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
+              <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁️'}</Text>
+            </Pressable>
           </View>
 
-          {/* Password strength */}
+          {/* Strength indicator */}
           {password.length > 0 && (
             <View style={styles.strengthRow}>
-              {[1, 2, 3, 4].map(i => (
+              {[1, 2, 3, 4].map((i) => (
                 <View
                   key={i}
-                  style={[
-                    styles.strengthBar,
-                    i <= strengthBars && { backgroundColor: strengthColor }
-                  ]}
+                  style={[styles.strengthBar, i <= strengthLevel && { backgroundColor: strengthColor }]}
                 />
               ))}
-              <Text style={[styles.strengthLabel, { color: strengthColor }]}>
-                {strengthLabel}
-              </Text>
+              <Text style={[styles.strengthLabel, { color: strengthColor }]}>{strengthLabel}</Text>
             </View>
           )}
 
           {/* Confirm Password */}
           <Text style={styles.label}>Confirm Password</Text>
-          <View style={[styles.inputWrap, focusedField === 'confirm' && styles.inputWrapFocused]}>
-            <ShieldIcon />
+          <View style={[styles.inputWrap, focused === 'confirm' && styles.inputFocused]}>
+            <Text style={styles.inputIcon}>🛡️</Text>
             <TextInput
               style={styles.input}
               placeholder="Re-enter your password"
-              placeholderTextColor="#3D2E5A"
+              placeholderTextColor={Colors.textMuted}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry={!showPassword}
-              onFocus={() => setFocusedField('confirm')}
-              onBlur={() => setFocusedField(null)}
+              onFocus={() => setFocused('confirm')}
+              onBlur={() => setFocused(null)}
             />
             {confirmPassword.length > 0 && (
-              <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-                {confirmPassword === password ? (
-                  <Path d="M20 6L9 17l-5-5" stroke="#2ECC71" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-                ) : (
-                  <Path d="M18 6L6 18M6 6l12 12" stroke="#E74C3C" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-                )}
-              </Svg>
+              <Text style={styles.matchIcon}>
+                {confirmPassword === password ? '✅' : '❌'}
+              </Text>
             )}
           </View>
 
-          {/* Register button */}
-          <TouchableOpacity
-            style={[styles.registerBtn, loading && styles.btnDisabled]}
+          {/* Submit */}
+          <Pressable
+            style={({ pressed }) => [styles.primaryBtn, (loading || pressed) && styles.btnPressed]}
             onPress={handleRegister}
             disabled={loading}
-            activeOpacity={0.85}
           >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <View style={styles.btnInner}>
-                <Text style={styles.registerBtnText}>Create My Account</Text>
-                <ArrowIcon />
-              </View>
-            )}
-          </TouchableOpacity>
+            <LinearGradient colors={Gradients.primary} style={styles.primaryBtnGrad}>
+              {loading
+                ? <ActivityIndicator color={Colors.textInverse} />
+                : <Text style={styles.primaryBtnText}>Create Account</Text>}
+            </LinearGradient>
+          </Pressable>
 
           {/* Login link */}
-          <TouchableOpacity
-            style={styles.loginLink}
+          <Pressable
+            style={({ pressed }) => [styles.loginLink, pressed && { opacity: 0.6 }]}
             onPress={() => navigation.navigate('Login')}
           >
             <Text style={styles.loginLinkText}>
               Already have an account?{' '}
-              <Text style={styles.loginLinkBold}>Login</Text>
+              <Text style={styles.loginLinkBold}>Log In</Text>
             </Text>
-          </TouchableOpacity>
+          </Pressable>
+
         </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -311,83 +249,171 @@ export default function RegisterScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#080818' },
-  scroll: { alignItems: 'center', paddingBottom: 40 },
-  ring1: {
-    position: 'absolute', width: width * 1.2, height: width * 1.2,
-    borderRadius: width * 0.6, borderWidth: 1,
-    borderColor: 'rgba(123,47,190,0.07)', top: -width * 0.4,
-  },
-  ring2: {
-    position: 'absolute', width: width * 0.7, height: width * 0.7,
-    borderRadius: width * 0.35, borderWidth: 1,
-    borderColor: 'rgba(123,47,190,0.12)', top: -width * 0.1,
-  },
-  glowBlob: {
-    position: 'absolute', width: 220, height: 220, borderRadius: 110,
-    backgroundColor: 'rgba(75,0,130,0.18)', top: 40,
-  },
-  topBar: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
+  container: { flex: 1, backgroundColor: Colors.background },
+
+  header: {
     paddingTop: 52,
-    marginBottom: 4,
+    paddingBottom: 28,
+    paddingHorizontal: Spacing.screenH,
+    alignItems: 'center',
   },
   backBtn: {
-    width: 42, height: 42, borderRadius: 13,
-    backgroundColor: 'rgba(123,47,190,0.15)',
-    justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1, borderColor: 'rgba(147,112,219,0.2)',
+    position: 'absolute',
+    top: 52,
+    left: Spacing.screenH,
+    width: 40,
+    height: 40,
+    borderRadius: Radius.md,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  backBtnSpacer: { width: 42 },
-  mascot: {
-    width: width * 0.38,
-    height: width * 0.38,
+  backArrow: { fontSize: 20, color: Colors.textInverse },
+  logo: { width: 130, height: 68, marginBottom: 10 },
+  headerTitle: {
+    fontFamily: Typography.fontFamily.extraBold,
+    fontSize: Typography.size['2xl'],
+    color: Colors.textInverse,
+    marginBottom: 4,
   },
+  headerSub: {
+    fontFamily: Typography.fontFamily.regular,
+    fontSize: Typography.size.sm,
+    color: Colors.primarySoft,
+  },
+
+  scroll: { flex: 1 },
+  scrollContent: { padding: Spacing.screenH, paddingBottom: 40 },
+
   card: {
-    width: width - 32,
-    backgroundColor: '#0E0E28',
-    borderRadius: 28, padding: 24,
-    marginTop: 12, borderWidth: 1,
-    borderColor: 'rgba(123,47,190,0.2)',
+    backgroundColor: Colors.surface,
+    borderRadius: Radius['2xl'],
+    padding: Spacing['6'],
+    ...Shadows.md,
   },
-  title: { fontSize: 26, fontWeight: '900', color: '#fff', marginBottom: 4 },
-  subtitle: { fontSize: 13, color: '#7B5EA7', marginBottom: 22, fontWeight: '500', lineHeight: 18 },
+
   label: {
-    fontSize: 11, color: '#9B7EC8', fontWeight: '700',
-    letterSpacing: 0.8, marginBottom: 7, textTransform: 'uppercase',
+    fontFamily: Typography.fontFamily.semiBold,
+    fontSize: Typography.size.sm,
+    color: Colors.textPrimary,
+    marginBottom: 8,
   },
+
+  roleRow: { flexDirection: 'row', gap: 12, marginBottom: Spacing['5'] },
+  roleCard: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    borderRadius: Radius.lg,
+    padding: 14,
+    alignItems: 'center',
+    backgroundColor: Colors.background,
+    position: 'relative',
+  },
+  roleCardSelected: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primarySoft,
+  },
+  roleIcon: { fontSize: 26, marginBottom: 6 },
+  roleLabel: {
+    fontFamily: Typography.fontFamily.bold,
+    fontSize: Typography.size.sm,
+    color: Colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: 3,
+  },
+  roleLabelSelected: { color: Colors.primary },
+  roleDesc: {
+    fontFamily: Typography.fontFamily.regular,
+    fontSize: Typography.size.xs,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+  },
+  roleDescSelected: { color: Colors.primaryMid },
+  checkBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 18,
+    height: 18,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkMark: { color: Colors.textInverse, fontSize: 10, fontWeight: '700' },
+
   inputWrap: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#13132A', borderRadius: 14,
-    paddingHorizontal: 14, marginBottom: 14,
-    borderWidth: 1.5, borderColor: 'rgba(123,47,190,0.15)', gap: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.background,
+    borderRadius: Radius.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    paddingHorizontal: Spacing['4'],
+    marginBottom: Spacing['4'],
+    height: 52,
+    gap: 10,
   },
-  inputWrapFocused: { borderColor: '#7B2FBE', backgroundColor: '#16163A' },
-  input: { flex: 1, color: '#fff', fontSize: 15, paddingVertical: 14 },
+  inputFocused: { borderColor: Colors.borderFocus, backgroundColor: Colors.primarySoft },
+  inputIcon: { fontSize: 16 },
+  input: {
+    flex: 1,
+    fontFamily: Typography.fontFamily.regular,
+    fontSize: Typography.size.base,
+    color: Colors.textPrimary,
+    height: '100%',
+  },
   eyeBtn: { padding: 4 },
+  eyeIcon: { fontSize: 16 },
+  matchIcon: { fontSize: 16 },
+
   strengthRow: {
-    flexDirection: 'row', alignItems: 'center',
-    gap: 5, marginTop: -8, marginBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: -Spacing['3'],
+    marginBottom: Spacing['4'],
   },
   strengthBar: {
-    flex: 1, height: 3, borderRadius: 2,
-    backgroundColor: 'rgba(123,47,190,0.15)',
+    flex: 1,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: Colors.border,
   },
-  strengthLabel: { fontSize: 11, fontWeight: '700', minWidth: 42 },
-  registerBtn: {
-    backgroundColor: '#7B2FBE', borderRadius: 14,
-    paddingVertical: 16, alignItems: 'center', marginTop: 6,
-    shadowColor: '#7B2FBE', shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.45, shadowRadius: 16, elevation: 10,
+  strengthLabel: {
+    fontFamily: Typography.fontFamily.bold,
+    fontSize: Typography.size.xs,
+    minWidth: 36,
   },
-  btnDisabled: { opacity: 0.7 },
-  btnInner: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  registerBtnText: { color: '#fff', fontSize: 16, fontWeight: '800', letterSpacing: 0.5 },
-  loginLink: { marginTop: 16, alignItems: 'center' },
-  loginLinkText: { color: '#7B5EA7', fontSize: 14 },
-  loginLinkBold: { color: '#C9A0DC', fontWeight: '800' },
+
+  primaryBtn: {
+    borderRadius: Radius.full,
+    overflow: 'hidden',
+    marginTop: 4,
+    marginBottom: Spacing['4'],
+  },
+  primaryBtnGrad: {
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Radius.full,
+  },
+  primaryBtnText: {
+    fontFamily: Typography.fontFamily.bold,
+    fontSize: Typography.size.md,
+    color: Colors.textInverse,
+  },
+  btnPressed: { opacity: 0.75 },
+
+  loginLink: { alignItems: 'center', paddingVertical: 8 },
+  loginLinkText: {
+    fontFamily: Typography.fontFamily.regular,
+    fontSize: Typography.size.sm,
+    color: Colors.textSecondary,
+  },
+  loginLinkBold: {
+    fontFamily: Typography.fontFamily.bold,
+    color: Colors.primary,
+  },
 });
