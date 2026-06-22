@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
   },
 
   mascotWrap: { alignItems: 'center', marginBottom: 20 },
-  mascot: { width: 56, height: 56 },
+  mascot: { width: 90, height: 90 },
 
   titleBlock: { alignItems: 'center', marginBottom: 28 },
   title: {

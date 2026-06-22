@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  Animated, StatusBar, Image, ScrollView,
+  Animated, StatusBar, ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -113,8 +113,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   mascot: {
-    width: 128,
-    height: 128,
+    width: 170,
+    height: 170,
   },
 
   textBlock: { alignItems: 'center', marginBottom: 36 },

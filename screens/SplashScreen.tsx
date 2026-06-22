@@ -90,15 +90,15 @@ const styles = StyleSheet.create({
   content: { alignItems: 'center' },
 
   logoTile: {
-    width: 122,
-    height: 122,
-    borderRadius: 34,
+    width: 160,
+    height: 160,
+    borderRadius: 40,
     backgroundColor: 'rgba(255,255,255,0.16)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
   },
-  logo: { width: 84, height: 84 },
+  logo: { width: 120, height: 120 },
 
   wordmark: {
     fontFamily: Typography.fontFamily.extraBold,
