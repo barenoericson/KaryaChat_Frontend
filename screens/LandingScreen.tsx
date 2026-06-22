@@ -1,239 +1,186 @@
 import React, { useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  Animated, Dimensions, StatusBar, Image, ScrollView,
+  Animated, StatusBar, Image, ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Typography, Spacing, Radius, Shadows, Gradients } from '../constants/theme';
-
-const { width, height } = Dimensions.get('window');
-
-const FEATURES = [
-  { icon: '🤖', title: 'AI-Powered Tutor', desc: 'Get instant help from CodeMate AI' },
-  { icon: '📚', title: 'Structured Lessons', desc: 'Learn through teacher-curated content' },
-  { icon: '🏆', title: 'Practice Quizzes', desc: 'Test your skills and track progress' },
-];
+import { MaterialIcons } from '@expo/vector-icons';
+import { Typography } from '../constants/theme';
 
 export default function LandingScreen({ navigation }: any) {
-  const fadeIn = useRef(new Animated.Value(0)).current;
-  const slideUp = useRef(new Animated.Value(60)).current;
+  const fadeIn  = useRef(new Animated.Value(0)).current;
+  const slideUp = useRef(new Animated.Value(32)).current;
   const logoFloat = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeIn, { toValue: 1, duration: 700, useNativeDriver: true }),
+      Animated.timing(fadeIn,  { toValue: 1, duration: 600, useNativeDriver: true }),
       Animated.spring(slideUp, { toValue: 0, friction: 8, tension: 40, useNativeDriver: true }),
     ]).start();
 
     Animated.loop(
       Animated.sequence([
-        Animated.timing(logoFloat, { toValue: -10, duration: 2400, useNativeDriver: true }),
-        Animated.timing(logoFloat, { toValue: 0, duration: 2400, useNativeDriver: true }),
+        Animated.timing(logoFloat, { toValue: -8, duration: 2400, useNativeDriver: true }),
+        Animated.timing(logoFloat, { toValue:  0, duration: 2400, useNativeDriver: true }),
       ])
     ).start();
   }, []);
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.primaryDark} />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Purple hero area */}
-      <LinearGradient colors={Gradients.primary} style={styles.hero}>
-        <Animated.View style={{ opacity: fadeIn, transform: [{ translateY: logoFloat }] }}>
-          <Image
-            source={require('../assets/CodeMate_official_log-removebg-preview.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        {/* Illustration well */}
+        <Animated.View style={[styles.illustrationWell, { opacity: fadeIn }]}>
+          <LinearGradient
+            colors={['#EEE7FF', '#F6F3FF']}
+            style={styles.illustrationGrad}
+          >
+            <Animated.Image
+              source={require('../assets/CodeMate_official_log-removebg-preview.png')}
+              style={[styles.mascot, { transform: [{ translateY: logoFloat }] }]}
+              resizeMode="contain"
+            />
+          </LinearGradient>
         </Animated.View>
-        <Animated.Text style={[styles.heroTitle, { opacity: fadeIn }]}>
-          Learn to Code Smarter
-        </Animated.Text>
-        <Animated.Text style={[styles.heroSub, { opacity: fadeIn }]}>
-          AI-powered lessons, quizzes, and a tutor{'\n'}that's always there for you
-        </Animated.Text>
-      </LinearGradient>
 
-      {/* White bottom sheet */}
-      <Animated.View style={[styles.sheet, { transform: [{ translateY: slideUp }] }]}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetContent}>
+        {/* Headline */}
+        <Animated.View style={[styles.textBlock, { opacity: fadeIn, transform: [{ translateY: slideUp }] }]}>
+          <Text style={styles.headline}>Welcome to CodeMate</Text>
+          <Text style={styles.subtext}>
+            Your AI tutor, live code playground,{'\n'}and classroom — all in one app.
+          </Text>
+        </Animated.View>
 
-          {/* Feature pills */}
-          <View style={styles.featureRow}>
-            {FEATURES.map((f) => (
-              <View key={f.title} style={styles.featureCard}>
-                <Text style={styles.featureIcon}>{f.icon}</Text>
-                <Text style={styles.featureTitle}>{f.title}</Text>
-                <Text style={styles.featureDesc}>{f.desc}</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* Stats */}
-          <View style={styles.statsRow}>
-            {[{ val: '50+', label: 'Lessons' }, { val: '10+', label: 'Courses' }, { val: '24/7', label: 'AI Support' }].map((s) => (
-              <View key={s.label} style={styles.statItem}>
-                <Text style={styles.statVal}>{s.val}</Text>
-                <Text style={styles.statLabel}>{s.label}</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* CTA buttons */}
+        {/* Buttons */}
+        <Animated.View style={[styles.buttons, { opacity: fadeIn, transform: [{ translateY: slideUp }] }]}>
+          {/* Log In — primary */}
           <Pressable
             style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}
-            onPress={() => navigation.navigate('Register')}
+            onPress={() => navigation.navigate('Login')}
           >
-            <LinearGradient colors={Gradients.primary} style={styles.primaryBtnGrad}>
-              <Text style={styles.primaryBtnText}>Get Started  →</Text>
+            <LinearGradient colors={['#7C3AED', '#5B21B6']} style={styles.primaryGrad}>
+              <Text style={styles.primaryBtnText}>Log In</Text>
             </LinearGradient>
           </Pressable>
 
+          {/* Create account — outline */}
           <Pressable
-            style={({ pressed }) => [styles.secondaryBtn, pressed && styles.pressed]}
-            onPress={() => navigation.navigate('Login')}
+            style={({ pressed }) => [styles.outlineBtn, pressed && styles.pressed]}
+            onPress={() => navigation.navigate('Register')}
           >
-            <Text style={styles.secondaryBtnText}>Already have an account? Log In</Text>
+            <Text style={styles.outlineBtnText}>Create account</Text>
           </Pressable>
 
+          {/* Guest — ghost */}
           <Pressable
             style={({ pressed }) => [styles.ghostBtn, pressed && styles.pressed]}
             onPress={() => navigation.navigate('Guest')}
           >
-            <Text style={styles.ghostBtnText}>Explore as Guest</Text>
+            <Text style={styles.ghostBtnText}>Continue as guest</Text>
+            <MaterialIcons name="arrow-forward" size={16} color="#4A4368" />
           </Pressable>
-
-        </ScrollView>
-      </Animated.View>
+        </Animated.View>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.primaryDark },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  scroll: {
+    flexGrow: 1,
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingBottom: 48,
+  },
 
-  hero: {
-    height: height * 0.45,
+  illustrationWell: {
+    width: '100%',
+    marginTop: 48,
+    marginBottom: 32,
+    borderRadius: 26,
+    overflow: 'hidden',
+  },
+  illustrationGrad: {
+    height: 226,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 48,
-    paddingHorizontal: Spacing.screenH,
   },
-  logo: { width: 160, height: 100, marginBottom: 8 },
-  heroTitle: {
+  mascot: {
+    width: 128,
+    height: 128,
+  },
+
+  textBlock: { alignItems: 'center', marginBottom: 36 },
+  headline: {
     fontFamily: Typography.fontFamily.extraBold,
-    fontSize: Typography.size['3xl'],
-    color: Colors.textInverse,
+    fontSize: 24,
+    color: '#1A1033',
     textAlign: 'center',
+    letterSpacing: -0.5,
     marginBottom: 10,
   },
-  heroSub: {
-    fontFamily: Typography.fontFamily.regular,
-    fontSize: Typography.size.sm,
-    color: Colors.primarySoft,
-    textAlign: 'center',
-    lineHeight: Typography.size.sm * Typography.lineHeight.relaxed,
-  },
-
-  sheet: {
-    flex: 1,
-    backgroundColor: Colors.surface,
-    borderTopLeftRadius: Radius['2xl'],
-    borderTopRightRadius: Radius['2xl'],
-    marginTop: -Radius['2xl'],
-    ...Shadows.lg,
-  },
-  sheetContent: {
-    paddingHorizontal: Spacing.screenH,
-    paddingTop: Spacing['6'],
-    paddingBottom: Spacing['10'],
-  },
-
-  featureRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: Spacing['6'],
-  },
-  featureCard: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    borderRadius: Radius.lg,
-    padding: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.primaryBorder,
-  },
-  featureIcon: { fontSize: 22, marginBottom: 6 },
-  featureTitle: {
-    fontFamily: Typography.fontFamily.bold,
-    fontSize: Typography.size.xs,
-    color: Colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: 3,
-  },
-  featureDesc: {
-    fontFamily: Typography.fontFamily.regular,
-    fontSize: Typography.size.xs,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 15,
-  },
-
-  statsRow: {
-    flexDirection: 'row',
-    backgroundColor: Colors.primarySoft,
-    borderRadius: Radius.lg,
-    paddingVertical: Spacing['4'],
-    marginBottom: Spacing['6'],
-    borderWidth: 1,
-    borderColor: Colors.primaryBorder,
-  },
-  statItem: { flex: 1, alignItems: 'center' },
-  statVal: {
-    fontFamily: Typography.fontFamily.extraBold,
-    fontSize: Typography.size.xl,
-    color: Colors.primary,
-  },
-  statLabel: {
+  subtext: {
     fontFamily: Typography.fontFamily.medium,
-    fontSize: Typography.size.xs,
-    color: Colors.textSecondary,
-    marginTop: 2,
+    fontSize: 13,
+    color: '#6E6788',
+    textAlign: 'center',
+    lineHeight: 20,
+    maxWidth: 210,
   },
 
-  primaryBtn: { borderRadius: Radius.full, overflow: 'hidden', marginBottom: 12 },
-  primaryBtnGrad: {
-    paddingVertical: 16,
+  buttons: { width: '100%', gap: 12 },
+
+  primaryBtn: { borderRadius: 15, overflow: 'hidden' },
+  primaryGrad: {
+    height: 50,
     alignItems: 'center',
-    borderRadius: Radius.full,
+    justifyContent: 'center',
+    borderRadius: 15,
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.30,
+    shadowRadius: 22,
+    elevation: 6,
   },
   primaryBtnText: {
     fontFamily: Typography.fontFamily.bold,
-    fontSize: Typography.size.md,
-    color: Colors.textInverse,
-    letterSpacing: 0.3,
+    fontSize: 15,
+    color: '#FFFFFF',
   },
 
-  secondaryBtn: {
+  outlineBtn: {
+    height: 50,
+    borderRadius: 15,
     borderWidth: 1.5,
-    borderColor: Colors.primary,
-    borderRadius: Radius.full,
-    paddingVertical: 14,
+    borderColor: '#D9CEF7',
     alignItems: 'center',
-    marginBottom: 10,
+    justifyContent: 'center',
   },
-  secondaryBtnText: {
-    fontFamily: Typography.fontFamily.semiBold,
-    fontSize: Typography.size.base,
-    color: Colors.primary,
+  outlineBtnText: {
+    fontFamily: Typography.fontFamily.bold,
+    fontSize: 15,
+    color: '#5B21B6',
   },
 
-  ghostBtn: { paddingVertical: 12, alignItems: 'center' },
+  ghostBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    gap: 6,
+  },
   ghostBtnText: {
     fontFamily: Typography.fontFamily.medium,
-    fontSize: Typography.size.sm,
-    color: Colors.textSecondary,
+    fontSize: 13,
+    color: '#4A4368',
   },
 
-  pressed: { opacity: 0.8 },
+  pressed: { opacity: 0.78 },
 });

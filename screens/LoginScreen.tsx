@@ -2,30 +2,29 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, Pressable, StyleSheet,
   ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
-  Animated, Dimensions, StatusBar, ScrollView, Image,
+  Animated, StatusBar, ScrollView, Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialIcons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../constants/api';
-import { Colors, Typography, Spacing, Radius, Shadows, Gradients } from '../constants/theme';
-
-const { width } = Dimensions.get('window');
+import { Typography } from '../constants/theme';
 
 export default function LoginScreen({ navigation }: any) {
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [focused, setFocused] = useState<string | null>(null);
+  const [loading, setLoading]   = useState(false);
+  const [showPwd, setShowPwd]   = useState(false);
+  const [focused, setFocused]   = useState<string | null>(null);
 
-  const fadeIn = useRef(new Animated.Value(0)).current;
-  const slideUp = useRef(new Animated.Value(40)).current;
+  const fadeIn  = useRef(new Animated.Value(0)).current;
+  const slideUp = useRef(new Animated.Value(28)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeIn, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.timing(fadeIn,  { toValue: 1, duration: 500, useNativeDriver: true }),
       Animated.spring(slideUp, { toValue: 0, friction: 8, tension: 45, useNativeDriver: true }),
     ]).start();
   }, []);
@@ -55,38 +54,43 @@ export default function LoginScreen({ navigation }: any) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <StatusBar barStyle="light-content" backgroundColor={Colors.primaryDark} />
-
-      {/* Purple header band */}
-      <LinearGradient colors={Gradients.primary} style={styles.header}>
-        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backArrow}>←</Text>
-        </Pressable>
-        <Image
-          source={require('../assets/CodeMate_official_log-removebg-preview.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-        <Text style={styles.headerTitle}>Welcome Back</Text>
-        <Text style={styles.headerSub}>Sign in to continue learning</Text>
-      </LinearGradient>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View style={[styles.card, { opacity: fadeIn, transform: [{ translateY: slideUp }] }]}>
+        {/* Back */}
+        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <MaterialIcons name="arrow-back" size={22} color="#1A1033" />
+        </Pressable>
+
+        {/* Mascot */}
+        <Animated.View style={[styles.mascotWrap, { opacity: fadeIn }]}>
+          <Image
+            source={require('../assets/CodeMate_official_log-removebg-preview.png')}
+            style={styles.mascot}
+            resizeMode="contain"
+          />
+        </Animated.View>
+
+        {/* Title */}
+        <Animated.View style={[styles.titleBlock, { opacity: fadeIn, transform: [{ translateY: slideUp }] }]}>
+          <Text style={styles.title}>Welcome back</Text>
+          <Text style={styles.subtitle}>Log in to continue learning</Text>
+        </Animated.View>
+
+        {/* Form */}
+        <Animated.View style={[styles.form, { opacity: fadeIn, transform: [{ translateY: slideUp }] }]}>
 
           {/* Email */}
-          <Text style={styles.label}>Email Address</Text>
-          <View style={[styles.inputWrap, focused === 'email' && styles.inputFocused]}>
-            <Text style={styles.inputIcon}>✉️</Text>
+          <View style={[styles.field, focused === 'email' && styles.fieldFocused]}>
+            <MaterialIcons name="mail-outline" size={18} color={focused === 'email' ? '#7C3AED' : '#A99BCF'} />
             <TextInput
               style={styles.input}
-              placeholder="you@example.com"
-              placeholderTextColor={Colors.textMuted}
+              placeholder="Email"
+              placeholderTextColor="#A99BCF"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -98,33 +102,41 @@ export default function LoginScreen({ navigation }: any) {
           </View>
 
           {/* Password */}
-          <Text style={styles.label}>Password</Text>
-          <View style={[styles.inputWrap, focused === 'password' && styles.inputFocused]}>
-            <Text style={styles.inputIcon}>🔒</Text>
+          <View style={[styles.field, focused === 'password' && styles.fieldFocused]}>
+            <MaterialIcons name="lock-outline" size={18} color={focused === 'password' ? '#7C3AED' : '#A99BCF'} />
             <TextInput
               style={styles.input}
-              placeholder="Enter your password"
-              placeholderTextColor={Colors.textMuted}
+              placeholder="Password"
+              placeholderTextColor="#A99BCF"
               value={password}
               onChangeText={setPassword}
-              secureTextEntry={!showPassword}
+              secureTextEntry={!showPwd}
               onFocus={() => setFocused('password')}
               onBlur={() => setFocused(null)}
             />
-            <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-              <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁️'}</Text>
+            <Pressable onPress={() => setShowPwd(!showPwd)} hitSlop={8}>
+              <MaterialIcons
+                name={showPwd ? 'visibility' : 'visibility-off'}
+                size={18}
+                color="#A99BCF"
+              />
             </Pressable>
           </View>
 
-          {/* Login button */}
+          {/* Forgot password */}
+          <Pressable style={styles.forgotWrap} onPress={() => Alert.alert('Reset Password', 'Contact your admin to reset your password.')}>
+            <Text style={styles.forgotText}>Forgot password?</Text>
+          </Pressable>
+
+          {/* Log In button */}
           <Pressable
-            style={({ pressed }) => [styles.primaryBtn, (loading || pressed) && styles.btnPressed]}
+            style={({ pressed }) => [styles.primaryBtn, (loading || pressed) && styles.pressed]}
             onPress={handleLogin}
             disabled={loading}
           >
-            <LinearGradient colors={Gradients.primary} style={styles.primaryBtnGrad}>
+            <LinearGradient colors={['#7C3AED', '#5B21B6']} style={styles.primaryGrad}>
               {loading
-                ? <ActivityIndicator color={Colors.textInverse} />
+                ? <ActivityIndicator color="#FFFFFF" />
                 : <Text style={styles.primaryBtnText}>Log In</Text>}
             </LinearGradient>
           </Pressable>
@@ -132,23 +144,37 @@ export default function LoginScreen({ navigation }: any) {
           {/* Divider */}
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
+            <Text style={styles.dividerLabel}>or continue with</Text>
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Register link */}
+          {/* Social buttons (UI only) */}
+          <View style={styles.socialRow}>
+            <Pressable
+              style={({ pressed }) => [styles.socialBtn, pressed && styles.pressed]}
+              onPress={() => Alert.alert('Coming soon', 'Google login is not available yet.')}
+            >
+              <Text style={styles.socialIcon}>G</Text>
+              <Text style={styles.socialText}>Google</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.socialBtn, pressed && styles.pressed]}
+              onPress={() => Alert.alert('Coming soon', 'GitHub login is not available yet.')}
+            >
+              <MaterialIcons name="code" size={16} color="#3A3458" />
+              <Text style={styles.socialText}>GitHub</Text>
+            </Pressable>
+          </View>
+
+          {/* Footer */}
           <Pressable
-            style={({ pressed }) => [styles.secondaryBtn, pressed && styles.btnPressed]}
+            style={styles.footerLink}
             onPress={() => navigation.navigate('Register')}
           >
-            <Text style={styles.secondaryBtnText}>Create New Account</Text>
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [styles.ghostBtn, pressed && styles.btnPressed]}
-            onPress={() => navigation.navigate('Guest')}
-          >
-            <Text style={styles.ghostBtnText}>Continue as Guest</Text>
+            <Text style={styles.footerText}>
+              New here?{'  '}
+              <Text style={styles.footerBold}>Sign up</Text>
+            </Text>
           </Pressable>
 
         </Animated.View>
@@ -158,120 +184,133 @@ export default function LoginScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-
-  header: {
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: 22,
     paddingTop: 52,
-    paddingBottom: 28,
-    paddingHorizontal: Spacing.screenH,
-    alignItems: 'center',
+    paddingBottom: 40,
   },
+
   backBtn: {
-    position: 'absolute',
-    top: 52,
-    left: Spacing.screenH,
-    width: 40,
-    height: 40,
-    borderRadius: Radius.md,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    justifyContent: 'center',
+    width: 40, height: 40,
+    borderRadius: 12,
+    backgroundColor: '#F4F1FC',
     alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
   },
-  backArrow: { fontSize: 20, color: Colors.textInverse },
-  logo: { width: 140, height: 72, marginBottom: 12 },
-  headerTitle: {
+
+  mascotWrap: { alignItems: 'center', marginBottom: 20 },
+  mascot: { width: 56, height: 56 },
+
+  titleBlock: { alignItems: 'center', marginBottom: 28 },
+  title: {
     fontFamily: Typography.fontFamily.extraBold,
-    fontSize: Typography.size['2xl'],
-    color: Colors.textInverse,
+    fontSize: 26,
+    color: '#1A1033',
+    letterSpacing: -0.5,
     marginBottom: 4,
   },
-  headerSub: {
-    fontFamily: Typography.fontFamily.regular,
-    fontSize: Typography.size.sm,
-    color: Colors.primarySoft,
+  subtitle: {
+    fontFamily: Typography.fontFamily.medium,
+    fontSize: 13,
+    color: '#6E6788',
   },
 
-  scroll: { flex: 1 },
-  scrollContent: { padding: Spacing.screenH, paddingBottom: 40 },
+  form: { gap: 0 },
 
-  card: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius['2xl'],
-    padding: Spacing['6'],
-    ...Shadows.md,
-  },
-
-  label: {
-    fontFamily: Typography.fontFamily.semiBold,
-    fontSize: Typography.size.sm,
-    color: Colors.textPrimary,
-    marginBottom: 8,
-  },
-  inputWrap: {
+  field: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.background,
-    borderRadius: Radius.lg,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#F7F5FF',
     borderWidth: 1.5,
-    borderColor: Colors.border,
-    paddingHorizontal: Spacing['4'],
-    marginBottom: Spacing['4'],
-    height: 52,
+    borderColor: '#ECE7FB',
+    paddingHorizontal: 14,
     gap: 10,
+    marginBottom: 12,
   },
-  inputFocused: { borderColor: Colors.borderFocus, backgroundColor: Colors.primarySoft },
-  inputIcon: { fontSize: 16 },
+  fieldFocused: {
+    borderColor: '#7C3AED',
+    backgroundColor: '#F3EEFF',
+  },
   input: {
     flex: 1,
-    fontFamily: Typography.fontFamily.regular,
-    fontSize: Typography.size.base,
-    color: Colors.textPrimary,
+    fontFamily: Typography.fontFamily.medium,
+    fontSize: 14,
+    color: '#1A1033',
     height: '100%',
   },
-  eyeBtn: { padding: 4 },
-  eyeIcon: { fontSize: 16 },
 
-  primaryBtn: { borderRadius: Radius.full, overflow: 'hidden', marginTop: 4, marginBottom: 20 },
-  primaryBtnGrad: {
-    height: 52,
+  forgotWrap: { alignSelf: 'flex-end', marginBottom: 20, marginTop: -4 },
+  forgotText: {
+    fontFamily: Typography.fontFamily.semiBold,
+    fontSize: 12,
+    color: '#7C3AED',
+  },
+
+  primaryBtn: { borderRadius: 15, overflow: 'hidden', marginBottom: 20 },
+  primaryGrad: {
+    height: 50,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: Radius.full,
+    borderRadius: 15,
   },
   primaryBtnText: {
     fontFamily: Typography.fontFamily.bold,
-    fontSize: Typography.size.md,
-    color: Colors.textInverse,
-  },
-  btnPressed: { opacity: 0.75 },
-
-  divider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: Colors.border },
-  dividerText: {
-    fontFamily: Typography.fontFamily.regular,
-    fontSize: Typography.size.sm,
-    color: Colors.textMuted,
+    fontSize: 15,
+    color: '#FFFFFF',
   },
 
-  secondaryBtn: {
-    height: 52,
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 16,
+  },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#F0ECFB' },
+  dividerLabel: {
+    fontFamily: Typography.fontFamily.medium,
+    fontSize: 12,
+    color: '#A99BCF',
+  },
+
+  socialRow: { flexDirection: 'row', gap: 12, marginBottom: 28 },
+  socialBtn: {
+    flex: 1,
+    height: 46,
+    borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: Colors.primary,
-    borderRadius: Radius.full,
+    borderColor: '#ECE7FB',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
+    gap: 8,
+    backgroundColor: '#FFFFFF',
   },
-  secondaryBtnText: {
+  socialIcon: {
+    fontFamily: Typography.fontFamily.bold,
+    fontSize: 15,
+    color: '#3A3458',
+  },
+  socialText: {
     fontFamily: Typography.fontFamily.semiBold,
-    fontSize: Typography.size.base,
-    color: Colors.primary,
+    fontSize: 13,
+    color: '#3A3458',
   },
 
-  ghostBtn: { height: 44, alignItems: 'center', justifyContent: 'center' },
-  ghostBtnText: {
+  footerLink: { alignItems: 'center' },
+  footerText: {
     fontFamily: Typography.fontFamily.medium,
-    fontSize: Typography.size.sm,
-    color: Colors.textSecondary,
+    fontSize: 13,
+    color: '#6E6788',
   },
+  footerBold: {
+    fontFamily: Typography.fontFamily.bold,
+    color: '#7C3AED',
+  },
+
+  pressed: { opacity: 0.75 },
 });

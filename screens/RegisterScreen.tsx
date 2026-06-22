@@ -2,40 +2,34 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, Pressable, StyleSheet,
   ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
-  Animated, Dimensions, StatusBar, ScrollView, Image,
+  Animated, StatusBar, ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialIcons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../constants/api';
-import { Colors, Typography, Spacing, Radius, Shadows, Gradients } from '../constants/theme';
+import { Typography } from '../constants/theme';
 
-const { width } = Dimensions.get('window');
-
-type Role = 'teacher' | 'student';
-
-const ROLE_OPTIONS: { value: Role; label: string; icon: string; desc: string }[] = [
-  { value: 'teacher', label: "I'm a Teacher", icon: '👨‍🏫', desc: 'Create classes & lessons' },
-  { value: 'student', label: "I'm a Student", icon: '🎓', desc: 'Join classes & learn' },
-];
+type Role = 'student' | 'teacher';
 
 export default function RegisterScreen({ navigation }: any) {
   const { login } = useAuth();
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername]             = useState('');
+  const [email, setEmail]                   = useState('');
+  const [password, setPassword]             = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState<Role>('student');
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [focused, setFocused] = useState<string | null>(null);
+  const [role, setRole]                     = useState<Role>('student');
+  const [loading, setLoading]               = useState(false);
+  const [showPwd, setShowPwd]               = useState(false);
+  const [focused, setFocused]               = useState<string | null>(null);
 
-  const fadeIn = useRef(new Animated.Value(0)).current;
-  const slideUp = useRef(new Animated.Value(40)).current;
+  const fadeIn  = useRef(new Animated.Value(0)).current;
+  const slideUp = useRef(new Animated.Value(28)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeIn, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.timing(fadeIn,  { toValue: 1, duration: 500, useNativeDriver: true }),
       Animated.spring(slideUp, { toValue: 0, friction: 8, tension: 45, useNativeDriver: true }),
     ]).start();
   }, []);
@@ -70,91 +64,53 @@ export default function RegisterScreen({ navigation }: any) {
     }
   };
 
-  const strengthLevel = Math.min(Math.floor(password.length / 3), 4);
-  const strengthColor = ['#EF4444', '#F59E0B', '#F59E0B', '#10B981', '#10B981'][strengthLevel];
-  const strengthLabel = ['', 'Weak', 'Fair', 'Good', 'Strong'][strengthLevel];
-
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <StatusBar barStyle="light-content" backgroundColor={Colors.primaryDark} />
-
-      {/* Purple header */}
-      <LinearGradient colors={Gradients.primary} style={styles.header}>
-        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backArrow}>←</Text>
-        </Pressable>
-        <Image
-          source={require('../assets/CodeMate_official_log-removebg-preview.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-        <Text style={styles.headerTitle}>Create Account</Text>
-        <Text style={styles.headerSub}>Join CodeMate and start your journey</Text>
-      </LinearGradient>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View style={[styles.card, { opacity: fadeIn, transform: [{ translateY: slideUp }] }]}>
+        {/* Back + Title */}
+        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <MaterialIcons name="arrow-back" size={22} color="#1A1033" />
+        </Pressable>
 
-          {/* Role selector */}
-          <Text style={styles.label}>I am a...</Text>
-          <View style={styles.roleRow}>
-            {ROLE_OPTIONS.map((opt) => {
-              const selected = role === opt.value;
-              return (
-                <Pressable
-                  key={opt.value}
-                  style={[styles.roleCard, selected && styles.roleCardSelected]}
-                  onPress={() => setRole(opt.value)}
-                >
-                  <Text style={styles.roleIcon}>{opt.icon}</Text>
-                  <Text style={[styles.roleLabel, selected && styles.roleLabelSelected]}>
-                    {opt.label}
-                  </Text>
-                  <Text style={[styles.roleDesc, selected && styles.roleDescSelected]}>
-                    {opt.desc}
-                  </Text>
-                  {selected && (
-                    <View style={styles.checkBadge}>
-                      <Text style={styles.checkMark}>✓</Text>
-                    </View>
-                  )}
-                </Pressable>
-              );
-            })}
-          </View>
+        <Animated.View style={[styles.titleBlock, { opacity: fadeIn, transform: [{ translateY: slideUp }] }]}>
+          <Text style={styles.title}>Create account</Text>
+          <Text style={styles.subtitle}>Join CodeMate in seconds</Text>
+        </Animated.View>
+
+        {/* Form */}
+        <Animated.View style={[styles.form, { opacity: fadeIn, transform: [{ translateY: slideUp }] }]}>
 
           {/* Username */}
-          <Text style={styles.label}>Username</Text>
-          <View style={[styles.inputWrap, focused === 'username' && styles.inputFocused]}>
-            <Text style={styles.inputIcon}>👤</Text>
+          <View style={[styles.field, focused === 'username' && styles.fieldFocused]}>
+            <MaterialIcons name="person-outline" size={18} color={focused === 'username' ? '#7C3AED' : '#A99BCF'} />
             <TextInput
               style={styles.input}
-              placeholder="Choose a username"
-              placeholderTextColor={Colors.textMuted}
+              placeholder="Full name"
+              placeholderTextColor="#A99BCF"
               value={username}
               onChangeText={setUsername}
-              autoCapitalize="none"
+              autoCapitalize="words"
               onFocus={() => setFocused('username')}
               onBlur={() => setFocused(null)}
             />
           </View>
 
           {/* Email */}
-          <Text style={styles.label}>Email Address</Text>
-          <View style={[styles.inputWrap, focused === 'email' && styles.inputFocused]}>
-            <Text style={styles.inputIcon}>✉️</Text>
+          <View style={[styles.field, focused === 'email' && styles.fieldFocused]}>
+            <MaterialIcons name="mail-outline" size={18} color={focused === 'email' ? '#7C3AED' : '#A99BCF'} />
             <TextInput
               style={styles.input}
-              placeholder="you@example.com"
-              placeholderTextColor={Colors.textMuted}
+              placeholder="Email"
+              placeholderTextColor="#A99BCF"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -166,79 +122,99 @@ export default function RegisterScreen({ navigation }: any) {
           </View>
 
           {/* Password */}
-          <Text style={styles.label}>Password</Text>
-          <View style={[styles.inputWrap, focused === 'password' && styles.inputFocused]}>
-            <Text style={styles.inputIcon}>🔒</Text>
+          <View style={[styles.field, focused === 'password' && styles.fieldFocused]}>
+            <MaterialIcons name="lock-outline" size={18} color={focused === 'password' ? '#7C3AED' : '#A99BCF'} />
             <TextInput
               style={styles.input}
-              placeholder="At least 6 characters"
-              placeholderTextColor={Colors.textMuted}
+              placeholder="Password"
+              placeholderTextColor="#A99BCF"
               value={password}
               onChangeText={setPassword}
-              secureTextEntry={!showPassword}
+              secureTextEntry={!showPwd}
               onFocus={() => setFocused('password')}
               onBlur={() => setFocused(null)}
             />
-            <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-              <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁️'}</Text>
+            <Pressable onPress={() => setShowPwd(!showPwd)} hitSlop={8}>
+              <MaterialIcons
+                name={showPwd ? 'visibility' : 'visibility-off'}
+                size={18}
+                color="#A99BCF"
+              />
             </Pressable>
           </View>
 
-          {/* Strength indicator */}
-          {password.length > 0 && (
-            <View style={styles.strengthRow}>
-              {[1, 2, 3, 4].map((i) => (
-                <View
-                  key={i}
-                  style={[styles.strengthBar, i <= strengthLevel && { backgroundColor: strengthColor }]}
-                />
-              ))}
-              <Text style={[styles.strengthLabel, { color: strengthColor }]}>{strengthLabel}</Text>
-            </View>
-          )}
-
-          {/* Confirm Password */}
-          <Text style={styles.label}>Confirm Password</Text>
-          <View style={[styles.inputWrap, focused === 'confirm' && styles.inputFocused]}>
-            <Text style={styles.inputIcon}>🛡️</Text>
+          {/* Confirm password */}
+          <View style={[styles.field, focused === 'confirm' && styles.fieldFocused]}>
+            <MaterialIcons name="lock-outline" size={18} color={focused === 'confirm' ? '#7C3AED' : '#A99BCF'} />
             <TextInput
               style={styles.input}
-              placeholder="Re-enter your password"
-              placeholderTextColor={Colors.textMuted}
+              placeholder="Confirm password"
+              placeholderTextColor="#A99BCF"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
-              secureTextEntry={!showPassword}
+              secureTextEntry={!showPwd}
               onFocus={() => setFocused('confirm')}
               onBlur={() => setFocused(null)}
             />
             {confirmPassword.length > 0 && (
-              <Text style={styles.matchIcon}>
-                {confirmPassword === password ? '✅' : '❌'}
-              </Text>
+              <MaterialIcons
+                name={confirmPassword === password ? 'check-circle' : 'cancel'}
+                size={18}
+                color={confirmPassword === password ? '#16A34A' : '#C0392B'}
+              />
             )}
           </View>
 
-          {/* Submit */}
+          {/* Role selector */}
+          <Text style={styles.roleLabel}>I'm joining as...</Text>
+          <View style={styles.roleRow}>
+            {/* Student */}
+            <Pressable
+              style={[styles.roleCard, role === 'student' && styles.roleCardActive]}
+              onPress={() => setRole('student')}
+            >
+              {role === 'student' && (
+                <MaterialIcons name="check-circle" size={18} color="#7C3AED" style={styles.roleCheck} />
+              )}
+              <View style={[styles.roleIconWrap, role === 'student' && styles.roleIconWrapActive]}>
+                <MaterialIcons name="school" size={22} color={role === 'student' ? '#7C3AED' : '#A99BCF'} />
+              </View>
+              <Text style={[styles.roleName, role === 'student' && styles.roleNameActive]}>Student</Text>
+            </Pressable>
+
+            {/* Teacher */}
+            <Pressable
+              style={[styles.roleCard, role === 'teacher' && styles.roleCardActive]}
+              onPress={() => setRole('teacher')}
+            >
+              {role === 'teacher' && (
+                <MaterialIcons name="check-circle" size={18} color="#7C3AED" style={styles.roleCheck} />
+              )}
+              <View style={[styles.roleIconWrap, role === 'teacher' && styles.roleIconWrapActive]}>
+                <MaterialIcons name="cast-for-education" size={22} color={role === 'teacher' ? '#7C3AED' : '#A99BCF'} />
+              </View>
+              <Text style={[styles.roleName, role === 'teacher' && styles.roleNameActive]}>Teacher</Text>
+            </Pressable>
+          </View>
+
+          {/* Create account button */}
           <Pressable
-            style={({ pressed }) => [styles.primaryBtn, (loading || pressed) && styles.btnPressed]}
+            style={({ pressed }) => [styles.primaryBtn, (loading || pressed) && styles.pressed]}
             onPress={handleRegister}
             disabled={loading}
           >
-            <LinearGradient colors={Gradients.primary} style={styles.primaryBtnGrad}>
+            <LinearGradient colors={['#7C3AED', '#5B21B6']} style={styles.primaryGrad}>
               {loading
-                ? <ActivityIndicator color={Colors.textInverse} />
-                : <Text style={styles.primaryBtnText}>Create Account</Text>}
+                ? <ActivityIndicator color="#FFFFFF" />
+                : <Text style={styles.primaryBtnText}>Create account</Text>}
             </LinearGradient>
           </Pressable>
 
-          {/* Login link */}
-          <Pressable
-            style={({ pressed }) => [styles.loginLink, pressed && { opacity: 0.6 }]}
-            onPress={() => navigation.navigate('Login')}
-          >
-            <Text style={styles.loginLinkText}>
-              Already have an account?{' '}
-              <Text style={styles.loginLinkBold}>Log In</Text>
+          {/* Footer */}
+          <Pressable style={styles.footerLink} onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.footerText}>
+              Already have an account?{'  '}
+              <Text style={styles.footerBold}>Log In</Text>
             </Text>
           </Pressable>
 
@@ -249,171 +225,140 @@ export default function RegisterScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-
-  header: {
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: 22,
     paddingTop: 52,
-    paddingBottom: 28,
-    paddingHorizontal: Spacing.screenH,
-    alignItems: 'center',
+    paddingBottom: 40,
   },
+
   backBtn: {
-    position: 'absolute',
-    top: 52,
-    left: Spacing.screenH,
-    width: 40,
-    height: 40,
-    borderRadius: Radius.md,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    justifyContent: 'center',
+    width: 40, height: 40,
+    borderRadius: 12,
+    backgroundColor: '#F4F1FC',
     alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
   },
-  backArrow: { fontSize: 20, color: Colors.textInverse },
-  logo: { width: 130, height: 68, marginBottom: 10 },
-  headerTitle: {
+
+  titleBlock: { marginBottom: 24 },
+  title: {
     fontFamily: Typography.fontFamily.extraBold,
-    fontSize: Typography.size['2xl'],
-    color: Colors.textInverse,
+    fontSize: 23,
+    color: '#1A1033',
+    letterSpacing: -0.5,
     marginBottom: 4,
   },
-  headerSub: {
-    fontFamily: Typography.fontFamily.regular,
-    fontSize: Typography.size.sm,
-    color: Colors.primarySoft,
+  subtitle: {
+    fontFamily: Typography.fontFamily.medium,
+    fontSize: 13,
+    color: '#6E6788',
   },
 
-  scroll: { flex: 1 },
-  scrollContent: { padding: Spacing.screenH, paddingBottom: 40 },
+  form: { gap: 0 },
 
-  card: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius['2xl'],
-    padding: Spacing['6'],
-    ...Shadows.md,
+  field: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#F7F5FF',
+    borderWidth: 1.5,
+    borderColor: '#ECE7FB',
+    paddingHorizontal: 14,
+    gap: 10,
+    marginBottom: 12,
+  },
+  fieldFocused: {
+    borderColor: '#7C3AED',
+    backgroundColor: '#F3EEFF',
+  },
+  input: {
+    flex: 1,
+    fontFamily: Typography.fontFamily.medium,
+    fontSize: 14,
+    color: '#1A1033',
+    height: '100%',
   },
 
-  label: {
+  roleLabel: {
     fontFamily: Typography.fontFamily.semiBold,
-    fontSize: Typography.size.sm,
-    color: Colors.textPrimary,
-    marginBottom: 8,
+    fontSize: 13,
+    color: '#1A1033',
+    marginBottom: 10,
+    marginTop: 4,
   },
-
-  roleRow: { flexDirection: 'row', gap: 12, marginBottom: Spacing['5'] },
+  roleRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 20,
+  },
   roleCard: {
     flex: 1,
+    height: 88,
+    borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: Colors.border,
-    borderRadius: Radius.lg,
-    padding: 14,
+    borderColor: '#ECE7FB',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
-    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    gap: 6,
     position: 'relative',
   },
-  roleCardSelected: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primarySoft,
+  roleCardActive: {
+    borderColor: '#7C3AED',
+    borderWidth: 2,
+    backgroundColor: '#F3EEFF',
   },
-  roleIcon: { fontSize: 26, marginBottom: 6 },
-  roleLabel: {
-    fontFamily: Typography.fontFamily.bold,
-    fontSize: Typography.size.sm,
-    color: Colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: 3,
-  },
-  roleLabelSelected: { color: Colors.primary },
-  roleDesc: {
-    fontFamily: Typography.fontFamily.regular,
-    fontSize: Typography.size.xs,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-  },
-  roleDescSelected: { color: Colors.primaryMid },
-  checkBadge: {
+  roleCheck: {
     position: 'absolute',
     top: 8,
     right: 8,
-    width: 18,
-    height: 18,
-    borderRadius: Radius.full,
-    backgroundColor: Colors.primary,
+  },
+  roleIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#F0ECFB',
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
   },
-  checkMark: { color: Colors.textInverse, fontSize: 10, fontWeight: '700' },
-
-  inputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.background,
-    borderRadius: Radius.lg,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    paddingHorizontal: Spacing['4'],
-    marginBottom: Spacing['4'],
-    height: 52,
-    gap: 10,
+  roleIconWrapActive: {
+    backgroundColor: '#E9DFFD',
   },
-  inputFocused: { borderColor: Colors.borderFocus, backgroundColor: Colors.primarySoft },
-  inputIcon: { fontSize: 16 },
-  input: {
-    flex: 1,
-    fontFamily: Typography.fontFamily.regular,
-    fontSize: Typography.size.base,
-    color: Colors.textPrimary,
-    height: '100%',
-  },
-  eyeBtn: { padding: 4 },
-  eyeIcon: { fontSize: 16 },
-  matchIcon: { fontSize: 16 },
-
-  strengthRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginTop: -Spacing['3'],
-    marginBottom: Spacing['4'],
-  },
-  strengthBar: {
-    flex: 1,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: Colors.border,
-  },
-  strengthLabel: {
+  roleName: {
     fontFamily: Typography.fontFamily.bold,
-    fontSize: Typography.size.xs,
-    minWidth: 36,
+    fontSize: 13,
+    color: '#6E6788',
+  },
+  roleNameActive: {
+    color: '#7C3AED',
   },
 
-  primaryBtn: {
-    borderRadius: Radius.full,
-    overflow: 'hidden',
-    marginTop: 4,
-    marginBottom: Spacing['4'],
-  },
-  primaryBtnGrad: {
-    height: 52,
+  primaryBtn: { borderRadius: 15, overflow: 'hidden', marginBottom: 20 },
+  primaryGrad: {
+    height: 50,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: Radius.full,
+    borderRadius: 15,
   },
   primaryBtnText: {
     fontFamily: Typography.fontFamily.bold,
-    fontSize: Typography.size.md,
-    color: Colors.textInverse,
+    fontSize: 15,
+    color: '#FFFFFF',
   },
-  btnPressed: { opacity: 0.75 },
 
-  loginLink: { alignItems: 'center', paddingVertical: 8 },
-  loginLinkText: {
-    fontFamily: Typography.fontFamily.regular,
-    fontSize: Typography.size.sm,
-    color: Colors.textSecondary,
+  footerLink: { alignItems: 'center' },
+  footerText: {
+    fontFamily: Typography.fontFamily.medium,
+    fontSize: 13,
+    color: '#6E6788',
   },
-  loginLinkBold: {
+  footerBold: {
     fontFamily: Typography.fontFamily.bold,
-    color: Colors.primary,
+    color: '#7C3AED',
   },
+
+  pressed: { opacity: 0.75 },
 });
