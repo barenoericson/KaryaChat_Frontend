@@ -42,7 +42,7 @@ export default function LandingScreen({ navigation }: any) {
             style={styles.illustrationGrad}
           >
             <Animated.Image
-              source={require('../assets/CodeMate_official_log-removebg-preview.png')}
+              source={require('../assets/CodeMate_AI_Icon.png')}
               style={[styles.mascot, { transform: [{ translateY: logoFloat }] }]}
               resizeMode="contain"
             />

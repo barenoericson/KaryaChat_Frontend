@@ -58,7 +58,7 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
         {/* Glass logo tile */}
         <Animated.View style={[styles.logoTile, { opacity: logoOpacity, transform: [{ scale: logoScale }] }]}>
           <Image
-            source={require('../assets/CodeMate_official_log-removebg-preview.png')}
+            source={require('../assets/CodeMate_AI_Icon.png')}
             style={styles.logo}
             resizeMode="contain"
           />

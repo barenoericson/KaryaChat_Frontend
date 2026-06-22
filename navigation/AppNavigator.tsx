@@ -43,6 +43,7 @@ import PlaygroundScreen from '../screens/student/PlaygroundScreen';
 import LessonDetailScreen from '../screens/shared/LessonDetailScreen';
 
 // Admin screens
+import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
 import AdminUsersScreen from '../screens/admin/AdminUsersScreen';
 
 // ─── Param lists ─────────────────────────────────────────────────────────────
@@ -240,8 +241,8 @@ function AdminTabs() {
     <AdminTab.Navigator screenOptions={tabOptions}>
       <AdminTab.Screen
         name="Home"
-        component={DashboardScreen}
-        options={{ tabBarLabel: 'Home', tabBarIcon: ({ color }) => <HomeIcon color={color} /> }}
+        component={AdminDashboardScreen}
+        options={{ tabBarLabel: 'Overview', tabBarIcon: ({ color }) => <HomeIcon color={color} /> }}
       />
       <AdminTab.Screen
         name="Users"

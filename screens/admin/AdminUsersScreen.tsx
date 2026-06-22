@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import {
-  View, Text, FlatList, Pressable, ActivityIndicator,
-  StyleSheet, SafeAreaView, Alert,
+  View, Text, FlatList, TextInput, Pressable,
+  ActivityIndicator, StyleSheet, StatusBar, Alert,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../services/api.client';
+import { Typography } from '../../constants/theme';
 
 interface UserItem {
   id: string;
@@ -15,48 +16,61 @@ interface UserItem {
   createdAt: string;
 }
 
-interface Stats {
-  totalUsers: number;
-  totalTeachers: number;
-  totalStudents: number;
-  totalClasses: number;
-  totalLessons: number;
-  totalSubmissions: number;
-  totalQuizResults: number;
-}
-
-type Tab = 'users' | 'stats';
+type Filter = 'all' | 'teacher' | 'student';
 
 const ROLE_COLOR: Record<string, string> = {
-  admin: '#7C3AED',
+  admin:   '#7C3AED',
   teacher: '#0EA5E9',
   student: '#059669',
 };
 
-function RoleBadge({ role }: { role: string }) {
+const AVATAR_BG: Record<string, string> = {
+  admin:   '#F3EEFF',
+  teacher: '#E0F2FE',
+  student: '#D1FAE5',
+};
+
+function UserRow({ item, onPress }: { item: UserItem; onPress: () => void }) {
+  const initial = item.username.charAt(0).toUpperCase();
+  const roleColor = ROLE_COLOR[item.role] ?? '#6B7280';
+  const avatarBg  = AVATAR_BG[item.role]  ?? '#F3F4F6';
+
   return (
-    <View style={[styles.roleBadge, { backgroundColor: ROLE_COLOR[role] ?? '#6B7280' }]}>
-      <Text style={styles.roleBadgeText}>{role}</Text>
+    <View style={styles.userRow}>
+      {/* Avatar */}
+      <View style={[styles.avatar, { backgroundColor: avatarBg }]}>
+        <Text style={[styles.avatarText, { color: roleColor }]}>{initial}</Text>
+      </View>
+
+      {/* Info */}
+      <View style={styles.userInfo}>
+        <Text style={styles.userName}>{item.username}</Text>
+        <Text style={styles.userRole} numberOfLines={1}>
+          {item.role.charAt(0).toUpperCase() + item.role.slice(1)}
+        </Text>
+      </View>
+
+      {/* Three-dot */}
+      <Pressable
+        style={({ pressed }) => [styles.menuBtn, pressed && { opacity: 0.6 }]}
+        onPress={onPress}
+        hitSlop={8}
+      >
+        <MaterialIcons name="more-vert" size={20} color="#A99BCF" />
+      </Pressable>
     </View>
   );
 }
 
 export default function AdminUsersScreen() {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<Tab>('users');
+  const [filter, setFilter]   = useState<Filter>('all');
+  const [search, setSearch]   = useState('');
 
-  const { data: users = [], isLoading: usersLoading, refetch } = useQuery<UserItem[]>({
+  const { data: users = [], isLoading, refetch } = useQuery<UserItem[]>({
     queryKey: ['admin-users'],
     queryFn: async () => {
       const { data } = await apiClient.get('/admin/users');
-      return data;
-    },
-  });
-
-  const { data: stats, isLoading: statsLoading } = useQuery<Stats>({
-    queryKey: ['admin-stats'],
-    queryFn: async () => {
-      const { data } = await apiClient.get('/admin/stats');
       return data;
     },
   });
@@ -65,7 +79,7 @@ export default function AdminUsersScreen() {
     mutationFn: ({ userId, role }: { userId: string; role: string }) =>
       apiClient.patch(`/admin/users/${userId}/role`, { role }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-users'] }),
-    onError: () => Alert.alert('Error', 'Failed to update role.'),
+    onError:   () => Alert.alert('Error', 'Failed to update role.'),
   });
 
   const confirmRoleChange = (user: UserItem) => {
@@ -83,140 +97,205 @@ export default function AdminUsersScreen() {
     );
   };
 
-  return (
-    <SafeAreaView style={styles.safe}>
-      <LinearGradient colors={['#7C3AED', '#5B21B6']} style={styles.header}>
-        <Text style={styles.headerTitle}>Admin Panel</Text>
-        <Text style={styles.headerSub}>Manage users and view platform stats</Text>
-      </LinearGradient>
+  const filtered = users.filter((u) => {
+    const matchFilter = filter === 'all' || u.role === filter;
+    const matchSearch = search.trim() === '' ||
+      u.username.toLowerCase().includes(search.toLowerCase()) ||
+      u.email.toLowerCase().includes(search.toLowerCase());
+    return matchFilter && matchSearch;
+  });
 
-      <View style={styles.tabs}>
-        <Pressable
-          style={[styles.tab, activeTab === 'users' && styles.tabActive]}
-          onPress={() => setActiveTab('users')}
-        >
-          <Text style={[styles.tabText, activeTab === 'users' && styles.tabTextActive]}>
-            Users ({users.length})
-          </Text>
-        </Pressable>
-        <Pressable
-          style={[styles.tab, activeTab === 'stats' && styles.tabActive]}
-          onPress={() => setActiveTab('stats')}
-        >
-          <Text style={[styles.tabText, activeTab === 'stats' && styles.tabTextActive]}>
-            Platform Stats
-          </Text>
-        </Pressable>
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Users</Text>
+        <Text style={styles.headerSub}>{users.length} accounts</Text>
       </View>
 
-      {activeTab === 'users' ? (
-        usersLoading ? (
-          <View style={styles.center}><ActivityIndicator size="large" color="#7C3AED" /></View>
-        ) : (
-          <FlatList
-            data={users}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.list}
-            renderItem={({ item }) => (
-              <View style={styles.userRow}>
-                <View style={styles.userAvatar}>
-                  <Text style={styles.userAvatarText}>
-                    {item.username.charAt(0).toUpperCase()}
-                  </Text>
-                </View>
-                <View style={styles.userInfo}>
-                  <Text style={styles.userName}>{item.username}</Text>
-                  <Text style={styles.userEmail}>{item.email}</Text>
-                  <Text style={styles.userDate}>
-                    Joined {new Date(item.createdAt).toLocaleDateString('en-US', {
-                      month: 'short', day: 'numeric', year: 'numeric',
-                    })}
-                  </Text>
-                </View>
-                <Pressable onPress={() => confirmRoleChange(item)}>
-                  <RoleBadge role={item.role} />
-                </Pressable>
-              </View>
-            )}
-            onRefresh={refetch}
-            refreshing={usersLoading}
-          />
-        )
+      {/* Search */}
+      <View style={styles.searchWrap}>
+        <MaterialIcons name="search" size={18} color="#A99BCF" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search users"
+          placeholderTextColor="#A99BCF"
+          value={search}
+          onChangeText={setSearch}
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        {search.length > 0 && (
+          <Pressable onPress={() => setSearch('')} hitSlop={8}>
+            <MaterialIcons name="close" size={16} color="#A99BCF" />
+          </Pressable>
+        )}
+      </View>
+
+      {/* Filter pills */}
+      <View style={styles.filterRow}>
+        {(['all', 'teacher', 'student'] as Filter[]).map((f) => (
+          <Pressable
+            key={f}
+            style={[styles.pill, filter === f && styles.pillActive]}
+            onPress={() => setFilter(f)}
+          >
+            <Text style={[styles.pillText, filter === f && styles.pillTextActive]}>
+              {f.charAt(0).toUpperCase() + f.slice(1)}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {/* User list */}
+      {isLoading ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color="#7C3AED" />
+        </View>
       ) : (
-        statsLoading ? (
-          <View style={styles.center}><ActivityIndicator size="large" color="#7C3AED" /></View>
-        ) : (
-          <View style={styles.statsGrid}>
-            {[
-              { label: 'Total Users', value: stats?.totalUsers ?? 0, emoji: '👥' },
-              { label: 'Teachers', value: stats?.totalTeachers ?? 0, emoji: '👩‍🏫' },
-              { label: 'Students', value: stats?.totalStudents ?? 0, emoji: '🎒' },
-              { label: 'Classes', value: stats?.totalClasses ?? 0, emoji: '📚' },
-              { label: 'Lessons', value: stats?.totalLessons ?? 0, emoji: '📝' },
-              { label: 'Submissions', value: stats?.totalSubmissions ?? 0, emoji: '📤' },
-              { label: 'Quiz Attempts', value: stats?.totalQuizResults ?? 0, emoji: '🧩' },
-            ].map((stat) => (
-              <View key={stat.label} style={styles.statCard}>
-                <Text style={styles.statEmoji}>{stat.emoji}</Text>
-                <Text style={styles.statValue}>{stat.value}</Text>
-                <Text style={styles.statLabel}>{stat.label}</Text>
-              </View>
-            ))}
-          </View>
-        )
+        <FlatList
+          data={filtered}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          renderItem={({ item }) => (
+            <UserRow item={item} onPress={() => confirmRoleChange(item)} />
+          )}
+          onRefresh={refetch}
+          refreshing={isLoading}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <MaterialIcons name="people-outline" size={40} color="#D9CEF7" />
+              <Text style={styles.emptyText}>No users found</Text>
+            </View>
+          }
+        />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F5F3FF' },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
-  header: { paddingTop: 16, paddingBottom: 20, paddingHorizontal: 20 },
-  headerTitle: { color: '#FFFFFF', fontSize: 26, fontWeight: '800', marginBottom: 4 },
-  headerSub: { color: 'rgba(255,255,255,0.75)', fontSize: 13 },
-
-  tabs: {
-    flexDirection: 'row', backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1, borderBottomColor: '#EDE9FE',
+  /* Header */
+  header: {
+    paddingTop: 52,
+    paddingHorizontal: 22,
+    paddingBottom: 14,
+    backgroundColor: '#FFFFFF',
   },
-  tab: { flex: 1, paddingVertical: 14, alignItems: 'center' },
-  tabActive: { borderBottomWidth: 3, borderBottomColor: '#7C3AED' },
-  tabText: { fontSize: 14, fontWeight: '600', color: '#9CA3AF' },
-  tabTextActive: { color: '#7C3AED', fontWeight: '700' },
+  headerTitle: {
+    fontFamily: Typography.fontFamily.extraBold,
+    fontSize: 26,
+    color: '#1A1033',
+    letterSpacing: -0.5,
+  },
+  headerSub: {
+    fontFamily: Typography.fontFamily.medium,
+    fontSize: 13,
+    color: '#6E6788',
+    marginTop: 2,
+  },
 
-  list: { padding: 16, paddingBottom: 40 },
+  /* Search */
+  searchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 22,
+    marginBottom: 12,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: '#F7F5FF',
+    borderWidth: 1.5,
+    borderColor: '#ECE7FB',
+    paddingHorizontal: 14,
+    gap: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: Typography.fontFamily.medium,
+    fontSize: 14,
+    color: '#1A1033',
+    height: '100%',
+  },
+
+  /* Filter pills */
+  filterRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 22,
+    marginBottom: 6,
+  },
+  pill: {
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: '#F7F5FF',
+    borderWidth: 1,
+    borderColor: '#ECE7FB',
+  },
+  pillActive: {
+    backgroundColor: '#7C3AED',
+    borderColor: '#7C3AED',
+  },
+  pillText: {
+    fontFamily: Typography.fontFamily.semiBold,
+    fontSize: 13,
+    color: '#6E6788',
+  },
+  pillTextActive: {
+    color: '#FFFFFF',
+  },
+
+  /* List */
+  list: { paddingHorizontal: 22, paddingTop: 8, paddingBottom: 40 },
 
   userRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, marginBottom: 10,
-    shadowColor: '#7C3AED', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  userAvatar: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: '#EDE9FE', justifyContent: 'center', alignItems: 'center',
-  },
-  userAvatarText: { color: '#7C3AED', fontSize: 18, fontWeight: '800' },
-  userInfo: { flex: 1 },
-  userName: { color: '#1F1235', fontSize: 14, fontWeight: '700' },
-  userEmail: { color: '#6B7280', fontSize: 12, marginTop: 2 },
-  userDate: { color: '#9CA3AF', fontSize: 11, marginTop: 2 },
-
-  roleBadge: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 12 },
-  roleBadgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700', textTransform: 'capitalize' },
-
-  statsGrid: {
-    flexDirection: 'row', flexWrap: 'wrap', padding: 16, gap: 12,
-  },
-  statCard: {
-    width: '46%', backgroundColor: '#FFFFFF', borderRadius: 18, padding: 20,
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#7C3AED', shadowOpacity: 0.07, shadowRadius: 10, shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
+    paddingVertical: 13,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3EEFF',
+    gap: 12,
   },
-  statEmoji: { fontSize: 32, marginBottom: 8 },
-  statValue: { color: '#1F1235', fontSize: 28, fontWeight: '900', marginBottom: 4 },
-  statLabel: { color: '#9CA3AF', fontSize: 12, fontWeight: '600', textAlign: 'center' },
+  avatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontFamily: Typography.fontFamily.extraBold,
+    fontSize: 16,
+  },
+  userInfo: { flex: 1 },
+  userName: {
+    fontFamily: Typography.fontFamily.semiBold,
+    fontSize: 14,
+    color: '#1A1033',
+  },
+  userRole: {
+    fontFamily: Typography.fontFamily.medium,
+    fontSize: 12,
+    color: '#6E6788',
+    marginTop: 2,
+  },
+  menuBtn: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  /* Empty */
+  empty: { alignItems: 'center', marginTop: 60, gap: 12 },
+  emptyText: {
+    fontFamily: Typography.fontFamily.medium,
+    fontSize: 14,
+    color: '#A99BCF',
+  },
 });
